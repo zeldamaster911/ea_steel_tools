@@ -2,10 +2,34 @@
 
 #As of 3/15/2017 this tool has over 7400 lines of code
 
+
+####################################################
+#     TEST SPACE
+####################################################
+
+
+####################################################
+####################################################
+
+
+
+
+######################################################################
+# WORKING BELOW
+######################################################################
+
+
+######################################################################
+# WORKING ABOVE
+######################################################################
+
 model = Sketchup.active_model
 ents = model.entities
 sel = model.selection
 scenes = model.pages
+layers = model.layers
+load 'ea_steel_tools/export_plates.rb'
+
 #CONSTANT LIBRARY
 load 'ea_steel_tools/magic_numbers.rb'
 
@@ -30,13 +54,13 @@ load 'ea_steel_tools/wide_flange_data.rb'
 load 'ea_steel_tools/dialog.rb'
 load 'ea_steel_tools/plate_observer.rb'
 
-#Layout Files (Under Construction)
+#Layout Files (Under Construction) 
 # load 'ea_steel_tools/layout_send.rb'
 
 #Breakout Files
-# load 'ea_steel_tools/breakout_setup.rb'
-# load 'ea_steel_tools/breakout.rb'
-# load 'ea_steel_tools/breakout_send.rb'
+load 'ea_steel_tools/breakout.rb'
+load 'ea_steel_tools/breakout_setup.rb'
+load 'ea_steel_tools/breakout_send.rb'
 
 
 #Guide Tools Files (Depricated)

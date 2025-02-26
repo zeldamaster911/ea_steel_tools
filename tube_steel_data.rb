@@ -130,8 +130,17 @@ module EA_Extensions623
               @vx = @vy.axes[0] if not_a_zero_vec
               @vz = @vy.axes[1] if not_a_zero_vec
 
-              # @trans = Geom::Transformation.axes pt1, @vx, @vy, @vz
-              # @trans2 = Geom::Transformation.axes pt2, @vx, @vy, @vz
+              if @is_column
+                @trans = Geom::Transformation.axes pt1, @vx, @vy, @vz.reverse
+                @trans2 = Geom::Transformation.axes pt2, @vx, @vy, @vz.reverse
+              else
+
+                @trans = Geom::Transformation.axes pt1, @vx.reverse, @vy, @vz
+                @trans2 = Geom::Transformation.axes pt2, @vx.reverse, @vy, @vz
+              end
+
+              # @trans = Geom::Transformation.axes pt1, @vx, @vy, @vz.reverse
+              # @trans2 = Geom::Transformation.axes pt2, @vx, @vy, @vz.reverse
 
               # Create the member in Sketchup
               self.create_geometry(pt1, pt2, view)
@@ -181,17 +190,17 @@ module EA_Extensions623
           if @tw > 0.375
             pts = [
               pt1 = [0,0,0],
-              pt2 = [@w - (MINIMUM_WELD_OVERHANG*2), 0,0],
-              pt3 = [@w - (MINIMUM_WELD_OVERHANG*2), @h - (MINIMUM_WELD_OVERHANG*2), 0],
-              pt4 = [0, @h - (MINIMUM_WELD_OVERHANG*2), 0]
+              pt2 = [@h - (MINIMUM_WELD_OVERHANG*2), 0,0],
+              pt3 = [@h - (MINIMUM_WELD_OVERHANG*2), @w - (MINIMUM_WELD_OVERHANG*2), 0],
+              pt4 = [0, @w - (MINIMUM_WELD_OVERHANG*2), 0]
             ]
             set_dist = MINIMUM_WELD_OVERHANG
           else
             pts = [
               pt1 = [0,0,0],
-              pt2 = [@w - @tw,0,0],
-              pt3 = [@w - @tw,@h - @tw,0],
-              pt4 = [0,@h - @tw,0]
+              pt2 = [@h - @tw,0,0],
+              pt3 = [@h - @tw,@w - @tw,0],
+              pt4 = [0,@w - @tw,0]
             ]
             set_dist = @tw/2
           end
@@ -228,7 +237,7 @@ module EA_Extensions623
 
           color_by_thickness(cap, @cap_thickness)
           color_by_thickness(cap2, @cap_thickness)
-          # classify_as_plate(cap2)
+          classify_as_plate(cap2)
         rescue Exception => e
           puts e.message
           puts e.backtrace.inspect
@@ -262,7 +271,9 @@ module EA_Extensions623
 
         @hss_inner_group = @hss_name_group.entities.add_group
         @hss_inner_group.name = HSSINGROUPNAME
-        @hss_inner_group.definition.behavior.no_scale_mask = 123
+        @hss_inner_group.definition.behavior.no_scale_mask = 123 if @is_column
+        @hss_inner_group.definition.behavior.no_scale_mask = 126 if not @is_column
+
       end
 
       def clear_groups
@@ -386,12 +397,12 @@ module EA_Extensions623
 
         # @entities.transform_entities mv_prof_to_c, @hss_outer_group
         @material_names = @materials.map {|color| color.name}
-
+        face2 = @hss_inner_group.copy
+        p face2
         extrude_length = vec.clone
         if @is_column
           extrude_length.length = (vec.length - (@base_thickness*2)) - (@start_tolerance+@end_tolerance) #This thickness is accouting for bot top and bottom plate. if the top plates thickness is controlled it will need to be accounted for if it varies from the base thickness
           extrude_tube(extrude_length, main_face)
-          add_reference_cross(inside_points, extrude_length)
           add_studs(extrude_length.length, @@stud_spacing)
           add_up_arrow(extrude_length.length, @@stud_spacing)
           add_name_label(vec)
@@ -400,6 +411,8 @@ module EA_Extensions623
 
           insert_base_plates(@base_type, @center_of_column)
           insert_top_plate(@center_of_column, extrude_length)
+
+          add_reference_cross(inside_points, extrude_length, face2)
         else
           if @hss_has_cap
             extrude_length.length = (vec.length - (@cap_thickness*2))
@@ -407,25 +420,28 @@ module EA_Extensions623
             extrude_length.length = vec.length
           end
           extrude_tube(extrude_length, main_face)
-          add_reference_cross(inside_points, extrude_length)
           add_name_label(extrude_length)
           add_studs_beam(extrude_length.length, @@stud_spacing)
           add_hss_beam_direction_labels(extrude_length)
           add_beam_up_arrow(vec, extrude_length)
           cap = draw_beam_caps(extrude_length) if @hss_has_cap
+          add_reference_cross(inside_points, extrude_length, face2)
           align_tube(vec, @hss_outer_group)
         end
 
         set_layer(@hss_name_group, STEEL_LAYER)
       end
 
-      def add_reference_cross(pts, seperation_dist)
+      def add_reference_cross(pts, seperation_dist, face)
         #draw the x in the middle of the tube, top & bottom
         reference_cross = @hss_inner_group.entities.add_group
         cl1 = reference_cross.entities.add_line(pts[0], pts[2])
         cl2 = reference_cross.entities.add_line(pts[1], pts[3])
+        cl1.split(0.500)
+        cl2.split(0.500)
         # cl1.split 0.5
         set_layer(reference_cross, CENTERS_LAYER)
+        set_layer(face, CENTERS_LAYER)
 
         reference_cross2 = reference_cross.copy
         set_layer(reference_cross2, CENTERS_LAYER)
@@ -433,8 +449,17 @@ module EA_Extensions623
         v = X_AXIS.clone if !@is_column
         v.length = seperation_dist.length
         @hss_name_group.entities.transform_entities(v, reference_cross2)
+
+        v.length = @base_thickness
+        reference_cross3 = reference_cross.copy
+
+        @hss_name_group.entities.transform_entities(v.reverse, reference_cross3)
+        face.transform!(v.reverse)
+
         reference_cross.explode
         reference_cross2.explode
+        reference_cross3.explode
+
       end
 
       def add_beam_up_arrow(vec, length)
@@ -516,9 +541,13 @@ module EA_Extensions623
           vec2 = Geom::Vector3d.new(6,0,0)
           slide_to_start = Geom::Transformation.translation(vec2)
 
-          rot = Geom::Transformation.rotation(@center_of_column, X_AXIS, 270.degrees)
+          # rot = Geom::Transformation.rotation(@center_of_column, X_AXIS, 90.degrees)
           @hss_name_group.entities.transform_entities rot, start_dir_beam2
           @hss_name_group.entities.transform_entities rot, end_dir_beam2
+
+          rota = Geom::Transformation.rotation(@center_of_column, Z_AXIS, 180.degrees)
+          @hss_name_group.entities.transform_entities rota, start_dir_beam2
+          @hss_name_group.entities.transform_entities rota, end_dir_beam2
 
           vec_slide2 = Geom::Vector3d.new(0,@w/2,0)
           slide1 = Geom::Transformation.translation(vec_slide2)
@@ -702,11 +731,13 @@ module EA_Extensions623
             @hss_outer_group.entities.transform_entities slide_tpl_up, top_plate
 
             rot = Geom::Transformation.rotation(top_plate.bounds.center, Y_AXIS, 180.degrees)
+            compass = add_plate_compass(top_plate, ORIGIN)
+            rot2 = Geom::Transformation.scaling(compass.bounds.center, -1.0, 1.0, 1.0)
+            top_plate.entities.transform_entities rot2, compass
             top_plate.transform! rot
             etch_plate(top_plate, @hss_inner_group)
-            add_plate_compass(top_plate, ORIGIN)
           end
-          @definition_list.remove(top_plate_def)
+          @definition_list.remove(top_plate_def) if top_plate_def
           color_by_thickness(top_plate, STANDARD_BASE_PLATE_THICKNESS)
           classify_as_plate(top_plate)
           return top_plate
@@ -722,8 +753,8 @@ module EA_Extensions623
         file_path = Sketchup.find_support_file "#{COMPONENT_PATH}/#{PL_COMPASS}", "Plugins"
         compass_def = @definition_list.load file_path
         compass = compass_group.entities.add_instance compass_def, center
-
         compass.explode
+        return compass_group
       end
 
       def etch_plate(plate, hss)
@@ -731,6 +762,7 @@ module EA_Extensions623
           ents = plate.definition.entities
           etch_group = ents.add_group
           etch_group.name = 'etch'
+          set_layer(etch_group, SCRIBES_LAYER)
           ege = etch_group.entities
           temp_etch_group = ege.add_group
 
@@ -888,37 +920,53 @@ module EA_Extensions623
         return bb
       end
 
+      def add_weephole(plate)
+        file_path = Sketchup.find_support_file "#{COMPONENT_PATH}/#{THREEIGHTS_HOLE}", "Plugins"
+        threeights = @definition_list.load file_path
+        weephole = plate.entities.add_instance(threeights, ORIGIN)
+        scl_hole = Geom::Transformation.scaling(ORIGIN, 1,1,STANDARD_BASE_PLATE_THICKNESS/2)
+        sld_vec = Geom::Vector3d.new(0,1.5,0)
+        plate.entities.transform_entities scl_hole, weephole
+        plate.entities.transform_entities sld_vec, weephole
+        # weephole.explode
+      end
+
       def insert_base_plates(type, center)
         begin
           # UI.messagebox("@h is #{@h}, @w is #{@w}")
-          h = [@h,@w].sort
-          case type
-          when 'SQ'
-            base_type = "PL_ #{h[-1].to_i}_ SQ"
-          when 'OC'
-            base_type = "PL_ #{h[-1].to_i}_ OC"
-          when 'IL'
-            base_type = "PL_ #{h[-1].to_i}_ IL"
-          when 'IC'
-            base_type = "PL_ #{h[-1].to_i}_ IC"
-          when 'EX'
-            base_type = "PL_ #{h[-1].to_i}_ EX"
-          when 'DR'
-            base_type = "PL_ #{h[-1].to_i}_ DR"
-          when 'DL'
-            base_type = "PL_ #{h[-1].to_i}_ DL"
-          when 'DI'
-            base_type = "PL_ #{h[-1].to_i}_ DI"
+          if @h >= 4 && @h <= 6
+            h = [@h,@w].sort
+            case type
+            when 'SQ'
+              base_type = "#{h[-1].to_i} SQ"
+            when 'OC'
+              base_type = "#{h[-1].to_i} OC"
+            when 'IL'
+              base_type = "#{h[-1].to_i} IL"
+            when 'IC'
+              base_type = "#{h[-1].to_i} IC"
+            when 'EX'
+              base_type = "#{h[-1].to_i} EX"
+            when 'DR'
+              base_type = "#{h[-1].to_i} DR"
+            when 'DL'
+              base_type = "#{h[-1].to_i} DL"
+            when 'DI'
+              base_type = "#{h[-1].to_i} DI"
+            else
+              # p 'selected blank'
+              plate = draw_parametric_plate(sq_plate(@w, @h))
+              # etch_plate(plate, @hss_inner_group)
+            end
           else
-            # p 'selected blank'
             plate = draw_parametric_plate(sq_plate(@w, @h))
-            # etch_plate(plate, @hss_inner_group)
           end
           # p "base type after is #{base_type}"
 
           file_path1 = Sketchup.find_support_file "#{COMPONENT_PATH}/#{base_type}.skp", "Plugins"
           if plate
             # p 'drawing parametric baseplate'
+            add_weephole(plate)
             etch_plate(plate, @hss_inner_group)
             add_plate_compass(plate, ORIGIN)
             color_by_thickness(plate, STANDARD_BASE_PLATE_THICKNESS.to_f)
@@ -927,7 +975,8 @@ module EA_Extensions623
           else
             # p 'grabbed plate from library'
             @base_group = @hss_outer_group.entities.add_group
-            @base_group.name = 'Base Plate'
+            # @base_group.name = 'Base Plate' (Updated to code below for naming the group)
+            @base_group.name = "#{@w.to_i}'' #{type}"
 
             @base_plate = @definition_list.load file_path1
 
@@ -979,10 +1028,10 @@ module EA_Extensions623
           comp_def = @definition_list.add "#{@tube_name}"
           comp_def.description = "#{@tube_name} label"
           ents = comp_def.entities
-          _3d_text = ents.add_3d_text("#{@tube_name}", TextAlignCenter, "1CamBam_Stick_7", false, false, LABEL_HEIGHT, 3.0, 0.0, false, 0.0)
-          # p "loaded CamBam_Stick_7: #{_3d_text}"
-          save_path = Sketchup.find_support_file "Components", ""
-          comp_def.save_as(save_path + "/#{@tube_name}.skp")
+          _3d_text = ents.add_3d_text("#{@tube_name}", TextAlignCenter, STEEL_FONT, false, false, LABEL_HEIGHT, 0.0, 0.0, false, 0.0)
+          # p "Loaded STEEL_FONT: #{_3d_text}"
+          # save_path = Sketchup.find_support_file "Components", ""
+          # comp_def.save_as(save_path + "/#{@tube_name}.skp")
         end
 
         hss_name_label = @name_label_group.entities.add_instance comp_def, ORIGIN
@@ -1344,7 +1393,6 @@ module EA_Extensions623
 
       def align_tube(vec, group)
         begin
-
           group.transform! @trans #Fixed this so the column is not scaled
           adjustment_vec = vec.clone
           if @is_column

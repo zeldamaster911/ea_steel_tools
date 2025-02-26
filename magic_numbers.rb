@@ -4,11 +4,15 @@ module EA_Extensions623
     ## MAIN CONSTANTS ##
     ####################
     ROOT_FILE_PATH = "ea_steel_tools"
+    TEMP_FOLDER = "#{ROOT_FILE_PATH}/Temp"
+    STEEL_EXTENSION = Sketchup.extensions[UNAME]
+    STEEL_EXTENSION.version = '3.8.0'.freeze
+
+    TEST_ENV = false
+
 
     #Setc the north direction as the green axis
     NORTH = Y_AXIS
-    CLSSFY_PLT = "Plate"
-    CLSSFR_LIB = "3DS Steel"
 
     #Ghost Colors
     GC_XAXIS      = "Red"
@@ -17,6 +21,30 @@ module EA_Extensions623
     GC_ONPLANE    = "Yellow"
     GC_OUTOFPLANE = "Gray"
 
+    PLATE_DICTIONARY       = "3DS Steel"
+    SCHEMA_KEY            = "SchemaType"
+    SCHEMA_VALUE          = ":Plate"
+
+    PLATE_ATTRIBUTE_CNC = "CNC_DATA"
+    Q_LABEL = "QUANTITY"
+    PN_LABEL = "PART_NAME"
+    M_LABEL = "MATERIAL"
+    TH_LABEL = "THICKNESS"
+    INFO_LABEL_POSITION = 0
+
+    DONE_COLOR = '1 Done'
+    PLATE_COLOR = 'Black'
+
+    #########################
+    ##    Dictionaries     ##
+    #########################
+    PLATE_DICTIONARIES = [
+      Q_LABEL,
+      PN_LABEL,
+      M_LABEL,
+      TH_LABEL,
+      INFO_LABEL_POSITION
+    ]
 
     #########################
     ##       LAYERS        ##
@@ -29,6 +57,9 @@ module EA_Extensions623
       " (A) 3 Level (Roof)",
       " (A)  ALL Floor Plans",
       " (S)  ALL Steel",
+      " (A) Arch. Model",
+      " (A) Stairs Control",
+      " (A) Compass",
       " (S) 1 Beams",
       " (S) 2 Beams",
       " (S) 3 Beams",
@@ -37,34 +68,47 @@ module EA_Extensions623
       " (S) 2 Columns",
       " (S) Bolts",
       " (S) Bolt Heads",
-      " (S) Centers",
+        #LAYER 0 NEEDS TO BE WHITE
+      " (S) Centers", #PINK
+      " (S) Scribes", #ORANGE
+      " (S) Holes", #PURPLE
+      " (S) Labels", #BLUE
+      " (S) Info", #BROWN
+
+      # " (S) Holes/Studs",
       " (C) Conc. Per Plan",
       " (C) Conc. As-Built",
       " (C) Foundation",
-      " (A) Arch. Model",
-      " (A) Stairs Control",
       " (F) General Framing",
       " (F) Joists",
-      " (F) Critical Framing",
-      " (S) Holes/Studs",
-      " (A) Compass"
+      " (F) Critical Framing"
     ]
+
+    BREAKOUT_LAYERS = ["Breakout_Part","Breakout_Plates", "DXF"]
+
     STEEL_LAYER = STANDARD_LAYERS.grep(/Steel/)[0]
     STUD_LAYER = STANDARD_LAYERS.grep(/Stud/)[0]
     HOLES_LAYER = STANDARD_LAYERS.grep(/Holes/)[0]
     CENTERS_LAYER = STANDARD_LAYERS.grep(/Centers/)[0]
+    SCRIBES_LAYER = STANDARD_LAYERS.grep(/Scribes/)[0]
+    INFO_LAYER = STANDARD_LAYERS.grep(/Info/)[0]
+    LABELS_LAYER = STANDARD_LAYERS.grep(/Labels/)[0]
+
 
     #########################
     ## COMPONENT CONSTANTS ##
     #########################
     COMPONENT_PATH     = "#{ROOT_FILE_PATH}/Beam Components"
+    THREEIGHTS_HOLE    = "Holes_ 3_8_ Hole Set.skp"
     NN_SXTNTHS_HOLE    = "Holes_ 9_16_ Hole Set.skp"
     THRTN_SXTNTHS_HOLE = "Holes_ 13_16_ Hole Set.skp"
+    SVNEGHTHS_HOLE     = "Holes_ 7_8_ Hole Set.skp"
     UP_DRCTN           = "Label_  UP.skp"
     UP_DRCTN_MD        = "Label_  _Upm.skp"
     UP_DRCTN_SM        = "Label_  _up.skp"
     HLF_INCH_STD       = "Studs_ 2 x 1_2.skp"
-    STEEL_FONT         = "1CamBam_Stick_7"
+    STEEL_FONT         = "3DSCAM"
+    # STEEL_FONT         = "1CamBam_Stick_7"
     NORTH_LABEL        = "Label_ N.skp"
     NORTHWEST_LABEL    = "Label_ NW.skp"
     NORTHEAST_LABEL    = "Label_ NE.skp"
@@ -123,35 +167,38 @@ module EA_Extensions623
     ###################
 
     # Most of these constants are not in use as the hss tools pulls the components from a library rather than draws them from scatch using these rules
-    STANDARD_BASE_MARGIN = 3
+    STANDARD_BASE_MARGIN = 0.5
     MINIMUM_WELD_OVERHANG = 0.25
     STANDARD_WELD_OVERHANG = 0.75
     HOLE_OFFSET = 1.5
     BASEPLATE_RADIUS = 0.5
     RADIUS_SEGMENT = 6
-    STANDARD_TOP_PLATE_SIZE = 5
+    # STANDARD_TOP_PLATE_SIZE = 5 #changed this from 5 12-30-2019 not sure if there are undesired issues or why i had ot on 5
+    STANDARD_TOP_PLATE_SIZE = 4
     MINIMUM_STUD_DIST_FROM_HSS_ENDS = 7.25
     HSS_BEAM_CAP_THICK = 0 # needs to be whatever the standard cap plates are
     BOTTOM_PLATE_CORNER_RADIUS = 0.5
     STANDARD_BASE_PLATE_THICKNESS = 0.75
+    ONE_INCH_BASEPLATE = 1.0
     ETCH_LINE = 0.25
-    HSSOUTGROUPNAME = "HSS Member"
+    HSSOUTGROUPNAME = UN_NAMED_GROUP
     HSSINGROUPNAME = "Difference"
     HSSBLANKCAP = "PL_ Blank Cap.skp"
 
-    BASETYPES = ["SQ","OC","IL","IC","EX","DR","DL","DI","Blank"]
+    BASETYPES = ["Blank","SQ","OC","IL","IC","EX","DR","DL","DI"]
+    BASETYPESSIX = ["Blank","SQ","C","IL"]
 
 
     # Normal steel colors for 3DS conventions and procedures
     STEEL_COLORS = {
        charcoal: {name: ' A Charcoal'     , rgba: [102, 102, 102, 255]},
        red:      {name: ' B Special Thick', rgba: [255, 50, 50, 255]},
-       orange:   {name: ' C ¾" Thick'    , rgba: [255, 135, 50, 255]},
-       yellow:   {name: ' D ⅝" Thick'    , rgba: [255, 255, 50, 255]},
-       green:    {name: ' E ½" Thick'    , rgba: [50, 255, 50, 255]},
-       blue:     {name: ' F ⅜" Thick'    , rgba: [50, 118, 255, 255]},
-       indigo:   {name: ' G 5/16" Thick' , rgba: [118, 50, 255, 255]},
-       purple:   {name: ' H ¼" Thick'    , rgba: [186, 50, 255, 255]},
+       orange:   {name: ' C ¾" Thick'    , rgba: [255, 135, 50, 255], thck: 0.750},
+       yellow:   {name: ' D ⅝" Thick'    , rgba: [255, 255, 50, 255], thck: 0.625},
+       green:    {name: ' E ½" Thick'    , rgba: [50, 255, 50, 255], thck: 0.500},
+       blue:     {name: ' F ⅜" Thick'    , rgba: [50, 118, 255, 255], thck: 0.375},
+       indigo:   {name: ' G 5/16" Thick' , rgba: [118, 50, 255, 255], thck: 0.3125},
+       purple:   {name: ' H ¼" Thick'    , rgba: [186, 50, 255, 255], thck: 0.250},
        grey:     {name: '1 Done'          , rgba: [153, 153, 153, 255]},
        layout:   {name: '2 Layed Out '    , rgba: [255, 127, 127, 255]},
        brokeout: {name: '3 Broken Out'    , rgba: [255, 180, 127, 255]},
