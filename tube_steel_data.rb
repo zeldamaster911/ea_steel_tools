@@ -739,6 +739,7 @@ module EA_Extensions623
             
           else
             top_plate = draw_parametric_plate(sq_plate(@w, @h))
+            top_plate.name = "Top Plate"
             slide_tpl_up = Geom::Transformation.translation(Geom::Vector3d.new(0,0,vec.length+STANDARD_BASE_PLATE_THICKNESS))
             @hss_outer_group.entities.transform_entities slide_tpl_up, top_plate
 
@@ -832,6 +833,7 @@ module EA_Extensions623
           arcs = []
       
           @baseplate_group = @hss_outer_group.entities.add_group
+          @baseplate_group.name = "BasePlate"
           face = @baseplate_group.entities.add_face pts
           vec = @center_of_column - @baseplate_group.bounds.center
           center = Geom::Transformation.translation(vec)
