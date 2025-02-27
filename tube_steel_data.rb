@@ -737,6 +737,7 @@ module EA_Extensions623
             top_plate.entities.transform_entities slide_tpl_up, @tp
             etch_plate(@tp, @hss_inner_group)
             @tp.explode
+            
           else
             top_plate = draw_parametric_plate(sq_plate(@w, @h))
             slide_tpl_up = Geom::Transformation.translation(Geom::Vector3d.new(0,0,vec.length+STANDARD_BASE_PLATE_THICKNESS))
@@ -756,8 +757,8 @@ module EA_Extensions623
           #p get_child_groups(top_plate)[0]
           #p get_child_groups(top_plate)[1]
           #p get_child_groups(top_plate)[3]
-          
-          get_child_groups(top_plate).each {|n| n.explode if n.name.empty? }
+          # Commented out until I find a better method for identifying which group (maybe try naming group in the creation?)
+          #get_child_groups(top_plate).each {|n| n.explode if n.name.empty? }
           return top_plate
         rescue Exception => e
           puts e.message
@@ -830,26 +831,24 @@ module EA_Extensions623
           temp_edges = []
           temp_groups = []
           arcs = []
-
+      
           @baseplate_group = @hss_outer_group.entities.add_group
           face = @baseplate_group.entities.add_face pts
           vec = @center_of_column - @baseplate_group.bounds.center
           center = Geom::Transformation.translation(vec)
           @hss_outer_group.entities.transform_entities(center, @baseplate_group)
-
-          #chamfer the corner
+      
+          # chamfer the corner
           crnr1 = face.vertices[-1]
           crnr2 = face.vertices[0]
           crn_pos1 = crnr1.position
           crn_pos2 = crnr2.position
-          # p crn_pos1
           gr = @baseplate_group.entities.add_group
-          arc1 = gr.entities.add_arc([crn_pos1[0]-0.5, crn_pos1[1]-0.5, crn_pos1[2]], X_AXIS, Z_AXIS, BOTTOM_PLATE_CORNER_RADIUS, 0.degrees ,90.degrees)
-          arc1 = gr.entities.add_arc([crn_pos2[0]-0.5, crn_pos2[1]+0.5, crn_pos2[2]], Y_AXIS.reverse, Z_AXIS, BOTTOM_PLATE_CORNER_RADIUS, 0.degrees ,90.degrees)
-          # arc1.faces
-
+          arc1 = gr.entities.add_arc([crn_pos1[0]-0.5, crn_pos1[1]-0.5, crn_pos1[2]], X_AXIS, Z_AXIS, BOTTOM_PLATE_CORNER_RADIUS, 0.degrees, 90.degrees)
+          arc1 = gr.entities.add_arc([crn_pos2[0]-0.5, crn_pos2[1]+0.5, crn_pos2[2]], Y_AXIS.reverse, Z_AXIS, BOTTOM_PLATE_CORNER_RADIUS, 0.degrees, 90.degrees)
+      
           dg = 180.degrees
-
+      
           1.times do |t|
             grc = gr.copy
             rot = Geom::Transformation.rotation(ORIGIN, Z_AXIS, dg)
@@ -857,72 +856,69 @@ module EA_Extensions623
             arcs << grc.explode
           end
           pcs = gr.explode
-
+      
           @baseplate_group.entities.each do |e|
-            if e.class == Sketchup::Edge
-              if e.length == BOTTOM_PLATE_CORNER_RADIUS
-                e.erase!
-              end
-            else
-              next
+            if e.is_a?(Sketchup::Edge) && e.length == BOTTOM_PLATE_CORNER_RADIUS
+              e.erase!
             end
           end
           pcs.each do |pc|
-            if pc.class == Sketchup::Edge
+            if pc.is_a?(Sketchup::Edge)
               face = pc.faces[0]
               break
             end
           end
-
+      
           face.pushpull STANDARD_BASE_PLATE_THICKNESS
-
+      
           @baseplate_group.entities.each do |e|
-            if e.class == Sketchup::Edge
-              if e.length == 0.75
-                e.soft = true
-                e.smooth = true
-              else
-                next
-              end
-            else
-              next
+            if e.is_a?(Sketchup::Edge) && e.length == 0.75
+              e.soft = true
+              e.smooth = true
             end
           end
-
+      
           color_by_thickness(@baseplate_group, 0.75)
-
-          bh_file = Sketchup.find_support_file("#{COMPONENT_PATH}/#{THRTN_SXTNTHS_HOLE}", "Plugins")
+      
+          bh_file = Sketchup.find_support_file("#{COMPONENT_PATH}/#{SVNEGHTHS_HOLE}", "Plugins")
           bh_def = @definition_list.load bh_file
-
-          big_hole = @baseplate_group.entities.add_instance bh_def, ORIGIN
-
+      
+          big_hole = @baseplate_group.entities.add_instance(bh_def, ORIGIN)
+      
+          # Use a new variable "hole_offset" (set to 2) instead of STANDARD_BASE_MARGIN.
+          hole_offset = 3
+      
+          # Define offset vectors using hole_offset
           v1 = X_AXIS.clone
           v2 = Y_AXIS.clone
-
-          v1.length = (@w/2)+(STANDARD_BASE_MARGIN.to_f/2)
-          v2.length = (@h/2)+(STANDARD_BASE_MARGIN.to_f/2)
+      
+          # Offsets along X and Y are computed as half the width/height plus half of hole_offset.
+          v1.length = (@w/2) + (hole_offset.to_f/2)
+          v2.length = (@h/2) + (hole_offset.to_f/2)
+      
           tr1 = Geom::Transformation.translation(v1)
           tr2 = Geom::Transformation.translation(v2)
-          scl_hole = Geom::Transformation.scaling(ORIGIN, 1,1,STANDARD_BASE_PLATE_THICKNESS/2)
-          @baseplate_group.entities.transform_entities scl_hole, big_hole
-
-          @baseplate_group.entities.transform_entities tr1, big_hole
+          scl_hole = Geom::Transformation.scaling(ORIGIN, 1, 1, STANDARD_BASE_PLATE_THICKNESS/2)
+          @baseplate_group.entities.transform_entities(scl_hole, big_hole)
+      
+          @baseplate_group.entities.transform_entities(tr1, big_hole)
           bh2 = big_hole.copy
-          @baseplate_group.entities.transform_entities tr2, big_hole
-
+          @baseplate_group.entities.transform_entities(tr2, big_hole)
+      
           tr1 = Geom::Transformation.translation(v2.reverse)
-          @baseplate_group.entities.transform_entities tr1, bh2
-
+          @baseplate_group.entities.transform_entities(tr1, bh2)
+      
           bh3 = bh2.copy
           bh4 = big_hole.copy
-
+      
+          # For the hole positioned opposite v1, use the same hole_offset:
           v3 = v1.clone.reverse
-          v3.length = @w+STANDARD_BASE_MARGIN
-
+          v3.length = @w + hole_offset
+      
           tr3 = Geom::Transformation.translation(v3)
-
-          @baseplate_group.entities.transform_entities tr3, [bh3, bh4]
-
+      
+          @baseplate_group.entities.transform_entities(tr3, [bh3, bh4])
+      
           return @baseplate_group
         rescue Exception => e
           puts e.message
@@ -930,6 +926,7 @@ module EA_Extensions623
           UI.messagebox("There was a problem inserting the base plate")
         end
       end
+      
 
       def getExtents
         bb = @model.bounds

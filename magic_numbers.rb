@@ -174,7 +174,8 @@ module EA_Extensions623
     BASEPLATE_RADIUS = 0.5
     RADIUS_SEGMENT = 6
     # STANDARD_TOP_PLATE_SIZE = 5 #changed this from 5 12-30-2019 not sure if there are undesired issues or why i had ot on 5
-    STANDARD_TOP_PLATE_SIZE = 4
+    # STANDARD_TOP_PLATE_SIZE = 5 #changed from 4 to 0, to enable parametric drawing of all plates now that they're improved. 2/27/25
+    STANDARD_TOP_PLATE_SIZE = 0
     MINIMUM_STUD_DIST_FROM_HSS_ENDS = 7.25
     HSS_BEAM_CAP_THICK = 0 # needs to be whatever the standard cap plates are
     BOTTOM_PLATE_CORNER_RADIUS = 0.5
