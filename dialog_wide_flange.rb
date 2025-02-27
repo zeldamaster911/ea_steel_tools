@@ -6,7 +6,7 @@ module EA_Extensions623
     ::SKUI.embed_in( self )
     # SKUI module is now available under EA_Steel_Tools::SKUI
 
-    class Window
+    class FlangeDialog
       include BeamLibrary
 
       @@state = 0

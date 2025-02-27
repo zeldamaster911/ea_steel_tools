@@ -5,7 +5,7 @@ module EA_Extensions623
     require FNAME+'/'+'control.rb'
     require FNAME+'/'+'beam_library.rb'
     require FNAME+'/'+'hss_library.rb'
-    require FNAME+'/'+'dialog.rb'
+    require FNAME+'/'+'dialog_wide_flange.rb'
     require FNAME+'/'+'tube_steel_data.rb'
     require FNAME+'/'+'dialog_rolled.rb'
     require FNAME+'/'+'dialog_tube_steel.rb'
@@ -33,7 +33,7 @@ module EA_Extensions623
 
     #WIDE FLANGE ICON
     cmd = UI::Command.new("Wide Flange") {
-      @@wide_flange_tool = Sketchup.active_model.select_tool EASteelTools::Window.new
+      @@wide_flange_tool = Sketchup.active_model.select_tool EASteelTools::FlangeDialog.new
     }
     @@EA_tools_menu.add_item cmd
     cmd.small_icon = "icons/wfs_icon1.png"

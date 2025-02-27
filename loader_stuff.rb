@@ -51,7 +51,7 @@ load 'ea_steel_tools/control.rb'
 
 #Flange Tool Files
 load 'ea_steel_tools/wide_flange_data.rb'
-load 'ea_steel_tools/dialog.rb'
+load 'ea_steel_tools/dialog_wide_flange.rb'
 load 'ea_steel_tools/plate_observer.rb'
 
 #Layout Files (Under Construction) 
