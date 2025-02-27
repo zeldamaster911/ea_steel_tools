@@ -167,7 +167,7 @@ module EA_Extensions623
     ###################
 
     # Most of these constants are not in use as the hss tools pulls the components from a library rather than draws them from scatch using these rules
-    STANDARD_BASE_MARGIN = 0.5
+    STANDARD_BASE_MARGIN = 3
     MINIMUM_WELD_OVERHANG = 0.25
     STANDARD_WELD_OVERHANG = 0.75
     HOLE_OFFSET = 1.5
