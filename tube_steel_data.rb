@@ -1033,8 +1033,8 @@ module EA_Extensions623
 
       def add_name_label(vec)
        begin
-        @name_label_group = @hss_name_group.entities.add_group
-        @name_label_group.name = @tube_name
+        @SteelTube = @hss_name_group.entities.add_group
+        @SteelTube.name = @tube_name
         ####################
         beam_direction = vec
         heading = Geom::Vector3d.new beam_direction
@@ -1058,7 +1058,7 @@ module EA_Extensions623
           # comp_def.save_as(save_path + "/#{@tube_name}.skp")
         end
 
-        hss_name_label = @name_label_group.entities.add_instance comp_def, ORIGIN
+        hss_name_label = @SteelTube.entities.add_instance comp_def, ORIGIN
 
         labels = []
         if @is_column
@@ -1093,12 +1093,12 @@ module EA_Extensions623
             label2 = hss_name_label.copy
             labels.push label2
             rot1 = Geom::Transformation.rotation @center_of_column, Z_AXIS, 90.degrees
-            @name_label_group.entities.transform_entities rot1, label2
+            @SteelTube.entities.transform_entities rot1, label2
 
             dist = (@h-@w)/2
 
             sld = Geom::Transformation.translation Geom::Vector3d.new(0,-dist,0)
-            @name_label_group.entities.transform_entities sld, label2
+            @SteelTube.entities.transform_entities sld, label2
             rotation_incrememnts = 180.degrees
             labels.push hss_name_label
             labels.push hss_name_label.copy
@@ -1129,7 +1129,7 @@ module EA_Extensions623
             l.transform! rot
           end
 
-          dist_to_slide2 = (vec.length - @name_label_group.bounds.depth) / 2
+          dist_to_slide2 = (vec.length - @SteelTube.bounds.depth) / 2
           z_copy = Z_AXIS.clone
           z_copy.length = dist_to_slide2
           slide_to_mid = Geom::Transformation.translation(z_copy)
@@ -1137,7 +1137,7 @@ module EA_Extensions623
           rot_to_pos = Geom::Transformation.rotation(ORIGIN, X_AXIS, 90.degrees)
           hss_name_label.transform! rot_to_pos
 
-          dist_to_slide = ((@h-@name_label_group.bounds.depth)/2)
+          dist_to_slide = ((@h-@SteelTube.bounds.depth)/2)
 
           z_copy = Z_AXIS.clone
           z_copy.length = dist_to_slide
@@ -1166,7 +1166,7 @@ module EA_Extensions623
           else
             flip = flip1 * flip2
           end
-          @name_label_group.entities.transform_entities flip, name_copy
+          @SteelTube.entities.transform_entities flip, name_copy
 
           labels.each_with_index do |l,i|
             # p rotation_incrememnts.radians
@@ -1174,13 +1174,13 @@ module EA_Extensions623
             l.transform! rot
           end
 
-          dist_to_slide2 = (vec.length - @name_label_group.bounds.width) / 2
+          dist_to_slide2 = (vec.length - @SteelTube.bounds.width) / 2
           x_copy = X_AXIS.clone
           x_copy.length = dist_to_slide2
           slide_to_mid = Geom::Transformation.translation(x_copy)
         end
 
-        @name_label_group.transform! slide_to_mid
+        @SteelTube.transform! slide_to_mid
 
         ####################
         rescue Exception => e
