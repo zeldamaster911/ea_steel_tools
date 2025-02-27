@@ -183,7 +183,7 @@ module EA_Extensions623
     ONE_INCH_BASEPLATE = 1.0
     ETCH_LINE = 0.25
     HSSOUTGROUPNAME = UN_NAMED_GROUP
-    HSSINGROUPNAME = "TubeModel"
+    HSSINGROUPNAME = "Difference"
     HSSBLANKCAP = "PL_ Blank Cap.skp"
 
     BASETYPES = ["Blank","SQ","OC","IL","IC","EX","DR","DL","DI"]
