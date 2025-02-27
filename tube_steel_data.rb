@@ -400,7 +400,8 @@ module EA_Extensions623
         # @entities.transform_entities mv_prof_to_c, @hss_outer_group
         @material_names = @materials.map {|color| color.name}
         face2 = @hss_inner_group.copy
-        p face2
+        face2.name = "test"
+        p face2.name + " needs to be deleted "
         extrude_length = vec.clone
         if @is_column
           extrude_length.length = (vec.length - (@base_thickness*2)) - (@start_tolerance+@end_tolerance) #This thickness is accouting for bot top and bottom plate. if the top plates thickness is controlled it will need to be accounted for if it varies from the base thickness
@@ -415,7 +416,8 @@ module EA_Extensions623
           insert_top_plate(@center_of_column, extrude_length)
 
           add_reference_cross(inside_points, extrude_length, face2)
-          
+          face2.locked = false
+          face2.erase!
 
 
         else
@@ -433,7 +435,6 @@ module EA_Extensions623
           add_reference_cross(inside_points, extrude_length, face2)
           align_tube(vec, @hss_outer_group)
         end
-
         set_layer(@hss_name_group, STEEL_LAYER)
       end
       def get_child_groups(parent_group)
@@ -467,9 +468,7 @@ module EA_Extensions623
         reference_cross.explode
         reference_cross2.explode
         reference_cross3.explode
-        reference_cross.name = 'RefCross1'
-        reference_cross2.name = 'RefCross2'
-        reference_cross3.name = 'RefCross3'
+        
 
       end
 
