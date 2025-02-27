@@ -187,6 +187,7 @@ module EA_Extensions623
       def draw_beam_caps(length)
         begin
           cap = @hss_outer_group.entities.add_group
+          cap.name = "Cap"
           if @tw > 0.375
             pts = [
               pt1 = [0,0,0],
@@ -264,6 +265,7 @@ module EA_Extensions623
 
       def set_groups
         @hss_outer_group = @entities.add_group
+        @hss_outer_group.name = "Outer Group"
         @hss_outer_group.name = HSSOUTGROUPNAME
 
         @hss_name_group = @hss_outer_group.entities.add_group
@@ -408,11 +410,14 @@ module EA_Extensions623
           add_name_label(vec)
           add_direction_labels()
           align_tube(vec, @hss_outer_group)
-
+         
           insert_base_plates(@base_type, @center_of_column)
           insert_top_plate(@center_of_column, extrude_length)
 
           add_reference_cross(inside_points, extrude_length, face2)
+          
+
+
         else
           if @hss_has_cap
             extrude_length.length = (vec.length - (@cap_thickness*2))
@@ -431,10 +436,13 @@ module EA_Extensions623
 
         set_layer(@hss_name_group, STEEL_LAYER)
       end
-
+      def get_child_groups(parent_group)
+        parent_group.entities.grep(Sketchup::Group)
+      end
       def add_reference_cross(pts, seperation_dist, face)
         #draw the x in the middle of the tube, top & bottom
         reference_cross = @hss_inner_group.entities.add_group
+
         cl1 = reference_cross.entities.add_line(pts[0], pts[2])
         cl2 = reference_cross.entities.add_line(pts[1], pts[3])
         cl1.split(0.500)
@@ -459,13 +467,16 @@ module EA_Extensions623
         reference_cross.explode
         reference_cross2.explode
         reference_cross3.explode
+        reference_cross.name = 'RefCross1'
+        reference_cross2.name = 'RefCross2'
+        reference_cross3.name = 'RefCross3'
 
       end
 
       def add_beam_up_arrow(vec, length)
         begin
           up_group = @hss_name_group.entities.add_group()
-
+          up_group.name = "UpArrows"
           file_path = Sketchup.find_support_file "#{COMPONENT_PATH}/#{UP_DRCTN_MD}", "Plugins/"
           up_direction = @definition_list.load file_path
 
@@ -506,6 +517,7 @@ module EA_Extensions623
           end_direction_group = @hss_name_group.entities.add_group
           end_ents = end_direction_group.entities
           up_direction_group = @hss_name_group.entities.add_group
+          up_direction_group.name = "UpArrowGroup"
           up_ents = up_direction_group.entities
 
           beam_direction = vec
@@ -713,7 +725,7 @@ module EA_Extensions623
       def insert_top_plate(center, vec)
         begin
           top_plate = @hss_outer_group.entities.add_group
-
+          top_plate.name = "Top Plate"
           if @w <= STANDARD_TOP_PLATE_SIZE
             file_path2 = Sketchup.find_support_file "#{COMPONENT_PATH}/#{HSSBLANKCAP}", "Plugins"
 
@@ -740,6 +752,12 @@ module EA_Extensions623
           @definition_list.remove(top_plate_def) if top_plate_def
           color_by_thickness(top_plate, STANDARD_BASE_PLATE_THICKNESS)
           classify_as_plate(top_plate)
+          
+          #p get_child_groups(top_plate)[0]
+          #p get_child_groups(top_plate)[1]
+          #p get_child_groups(top_plate)[3]
+          
+          get_child_groups(top_plate).each {|n| n.explode if n.name.empty? }
           return top_plate
         rescue Exception => e
           puts e.message
@@ -760,48 +778,51 @@ module EA_Extensions623
       def etch_plate(plate, hss)
         begin
           ents = plate.definition.entities
+          
           etch_group = ents.add_group
           etch_group.name = 'etch'
           set_layer(etch_group, SCRIBES_LAYER)
           ege = etch_group.entities
           temp_etch_group = ege.add_group
-
           col_corner = hss.bounds.min
           col_corner[2] = 0
-
-          p1a = [0,0,0]
-          p2a = [ETCH_LINE,0,0]
-          p3a = [0,ETCH_LINE,0]
-
-          p1b = [@w, 0,0]
-          p2b = [@w-ETCH_LINE,0,0]
-          p3b = [@w, ETCH_LINE,0]
-
+      
+          p1a = [0, 0, 0]
+          p2a = [ETCH_LINE, 0, 0]
+          p3a = [0, ETCH_LINE, 0]
+      
+          p1b = [@w, 0, 0]
+          p2b = [@w - ETCH_LINE, 0, 0]
+          p3b = [@w, ETCH_LINE, 0]
+      
           temp_etch_group.entities.add_line(p1a, p2a)
           temp_etch_group.entities.add_line(p1a, p3a)
           temp_etch_group.entities.add_line(p1b, p2b)
           temp_etch_group.entities.add_line(p1b, p3b)
-
+      
           temp_group_copy = temp_etch_group.copy
-          rot = Geom::Transformation.rotation([@w/2, @h/2, 0], Z_AXIS, 180.degrees)
+          rot = Geom::Transformation.rotation([@w / 2, @h / 2, 0], Z_AXIS, 180.degrees)
           ege.transform_entities(rot, temp_group_copy)
-
+      
           temp_etch_group.explode
           temp_group_copy.explode
-
+      
           tp1 = etch_group.definition.bounds.center
           tp2 = hss.definition.bounds.min
           v = tp2 - tp1
           place_etch = Geom::Transformation.translation(v)
-          @entities.transform_entities place_etch, etch_group
-
-
+          @entities.transform_entities(place_etch, etch_group)
+      
+          
+          
+      
         rescue Exception => e
           puts e.message
           puts e.backtrace.inspect
           UI.messagebox("There was a problem etching the plate")
         end
       end
+      
 
       def draw_parametric_plate(pts)
         begin
@@ -971,12 +992,13 @@ module EA_Extensions623
             add_plate_compass(plate, ORIGIN)
             color_by_thickness(plate, STANDARD_BASE_PLATE_THICKNESS.to_f)
             classify_as_plate(plate)
+            plate.name = "Base Plate"
 
           else
             # p 'grabbed plate from library'
             @base_group = @hss_outer_group.entities.add_group
-            # @base_group.name = 'Base Plate' (Updated to code below for naming the group)
-            @base_group.name = "#{@w.to_i}'' #{type}"
+             @base_group.name = 'Base Plate' #(Updated to code below for naming the group)
+            #@base_group.name = "#{@w.to_i}'' #{type}"
 
             @base_plate = @definition_list.load file_path1
 
@@ -986,6 +1008,8 @@ module EA_Extensions623
             etch_plate(@bp, @hss_inner_group)
             color_by_thickness(@base_group, STANDARD_BASE_PLATE_THICKNESS.to_f)
             classify_as_plate(@base_group)
+            @base_group.name = "Base Plate"
+            @bp.name = "Base Plate"
             @bp.explode
             @definition_list.remove(@base_plate)
           end
