@@ -32,7 +32,7 @@ module EA_Extensions623
           @@hss_is_rotated        = false
 
           @@start_tolerance        = 1.5
-          @@end_tolerance          = 0.0675
+          @@end_tolerance          = 0.0
 
           @@hss_type               = '' # Beam or Column Options
 
