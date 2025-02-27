@@ -179,7 +179,7 @@ module EA_Extensions623
     MINIMUM_STUD_DIST_FROM_HSS_ENDS = 7.25
     HSS_BEAM_CAP_THICK = 0 # needs to be whatever the standard cap plates are
     BOTTOM_PLATE_CORNER_RADIUS = 0.5
-    STANDARD_BASE_PLATE_THICKNESS = 0.75
+    STANDARD_BASE_PLATE_THICKNESS = 0.5
     ONE_INCH_BASEPLATE = 1.0
     ETCH_LINE = 0.25
     HSSOUTGROUPNAME = UN_NAMED_GROUP
@@ -203,11 +203,11 @@ module EA_Extensions623
        grey:     {name: '1 Done'          , rgba: [153, 153, 153, 255]},
        layout:   {name: '2 Layed Out '    , rgba: [255, 127, 127, 255]},
        brokeout: {name: '3 Broken Out'    , rgba: [255, 180, 127, 255]},
-       modeled:  {name: '4 Modeled'       , rgba: [255, 255, 127, 255]},
-       j_master: {name: '5 Jedi Master'   , rgba: [127, 255, 127, 255]},
-       j_knight: {name: '6 Jedi Knight'   , rgba: [127, 169, 255, 255]},
-       padawan:  {name: '7 Padawan'       , rgba: [150, 127, 255, 255]},
-       youngling: {name: '8 Youngling'     , rgba: [212, 127, 255, 255]},
+       modeled:  {name: '4 Model Review'       , rgba: [255, 255, 127, 255]},
+       j_master: {name: '5 Modeled'   , rgba: [127, 255, 127, 255]},
+       j_knight: {name: '6 Placement Reviewed'   , rgba: [127, 169, 255, 255]},
+       padawan:  {name: '7 Size Reviewed'       , rgba: [150, 127, 255, 255]},
+       youngling: {name: '8 Cad Reviewed'     , rgba: [212, 127, 255, 255]},
        black:    {name: 'Black'           , rgba: [0, 0, 0, 255]},
        cener:    {name: 'Center'          , rgba: [122, 255, 188, 255]},
        flag:     {name: 'Flag'            , rgba: [255, 25, 113, 255]}
