@@ -720,7 +720,11 @@ module EA_Extensions623
           UI.messagebox("There was a problem inserting the half_inch_stud into the model")
         end
       end
-
+      module Plate_Type
+        TOP = :top
+        BASE   = :base
+        
+      end
       def insert_top_plate(center, vec)
         begin
           top_plate = @hss_outer_group.entities.add_group
@@ -738,7 +742,7 @@ module EA_Extensions623
             @tp.explode
             
           else
-            top_plate = draw_parametric_plate(sq_plate(@w, @h))
+            top_plate = draw_parametric_plate(sq_plate(@w, @h), Plate_Type::TOP)
             top_plate.name = "Top Plate"
             slide_tpl_up = Geom::Transformation.translation(Geom::Vector3d.new(0,0,vec.length+STANDARD_BASE_PLATE_THICKNESS))
             @hss_outer_group.entities.transform_entities slide_tpl_up, top_plate
@@ -825,13 +829,18 @@ module EA_Extensions623
       end
       
 
-      def draw_parametric_plate(pts)
+      def draw_parametric_plate(pts, pt)
         begin
           temp_faces = []
           temp_edges = []
           temp_groups = []
           arcs = []
-      
+          case pt
+          when Plate_Type::TOP
+            p "Top"
+          when Plate_Type::BASE
+            p "Base"
+          end
           @baseplate_group = @hss_outer_group.entities.add_group
           @baseplate_group.name = "BasePlate"
           face = @baseplate_group.entities.add_face pts
@@ -974,11 +983,11 @@ module EA_Extensions623
               base_type = "#{h[-1].to_i} DI"
             else
               # p 'selected blank'
-              plate = draw_parametric_plate(sq_plate(@w, @h))
+              plate = draw_parametric_plate(sq_plate(@w, @h), Plate_Type::BASE)
               # etch_plate(plate, @hss_inner_group)
             end
           else
-            plate = draw_parametric_plate(sq_plate(@w, @h))
+            plate = draw_parametric_plate(sq_plate(@w, @h), Plate_Type::BASE)
           end
           # p "base type after is #{base_type}"
 
