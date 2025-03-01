@@ -744,7 +744,7 @@ module EA_Extensions623
           else
             top_plate = draw_parametric_plate(sq_plate(@w, @h), Plate_Type::TOP)
             top_plate.name = "Top Plate"
-            slide_tpl_up = Geom::Transformation.translation(Geom::Vector3d.new(0,0,vec.length+STANDARD_BASE_PLATE_THICKNESS))
+            slide_tpl_up = Geom::Transformation.translation(Geom::Vector3d.new(0,0,vec.length+STANDARD_CAP_PLATE_THICKNESS))
             @hss_outer_group.entities.transform_entities slide_tpl_up, top_plate
 
             rot = Geom::Transformation.rotation(top_plate.bounds.center, Y_AXIS, 180.degrees)
@@ -755,7 +755,7 @@ module EA_Extensions623
             etch_plate(top_plate, @hss_inner_group)
           end
           @definition_list.remove(top_plate_def) if top_plate_def
-          color_by_thickness(top_plate, STANDARD_BASE_PLATE_THICKNESS)
+          color_by_thickness(top_plate, STANDARD_CAP_PLATE_THICKNESS)
           classify_as_plate(top_plate)
           
           #p get_child_groups(top_plate)[0]
