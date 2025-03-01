@@ -835,11 +835,14 @@ module EA_Extensions623
           temp_edges = []
           temp_groups = []
           arcs = []
+          plate_thickness = 0
           case pt
           when Plate_Type::TOP
             p "Top"
+            plate_thickness = STANDARD_CAP_PLATE_THICKNESS
           when Plate_Type::BASE
             p "Base"
+            plate_thickness = STANDARD_BASE_PLATE_THICKNESS
           end
           @baseplate_group = @hss_outer_group.entities.add_group
           @baseplate_group.name = "BasePlate"
@@ -879,10 +882,10 @@ module EA_Extensions623
             end
           end
       
-          face.pushpull STANDARD_BASE_PLATE_THICKNESS
+          face.pushpull plate_thickness
       
           @baseplate_group.entities.each do |e|
-            if e.is_a?(Sketchup::Edge) && e.length == 0.75
+            if e.is_a?(Sketchup::Edge) && e.length == plate_thickness
               e.soft = true
               e.smooth = true
             end
@@ -908,7 +911,7 @@ module EA_Extensions623
       
           tr1 = Geom::Transformation.translation(v1)
           tr2 = Geom::Transformation.translation(v2)
-          scl_hole = Geom::Transformation.scaling(ORIGIN, 1, 1, STANDARD_BASE_PLATE_THICKNESS/2)
+          scl_hole = Geom::Transformation.scaling(ORIGIN, 1, 1, plate_thickness/2)
           @baseplate_group.entities.transform_entities(scl_hole, big_hole)
       
           @baseplate_group.entities.transform_entities(tr1, big_hole)
