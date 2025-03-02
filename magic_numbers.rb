@@ -6,7 +6,7 @@ module EA_Extensions623
     ROOT_FILE_PATH = "ea_steel_tools"
     TEMP_FOLDER = "#{ROOT_FILE_PATH}/Temp"
     STEEL_EXTENSION = Sketchup.extensions[UNAME]
-    STEEL_EXTENSION.version = '3.8.0'.freeze
+    STEEL_EXTENSION.version = '3.9'.freeze
 
     TEST_ENV = false
 
