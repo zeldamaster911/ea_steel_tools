@@ -33,6 +33,9 @@ module EA_Extensions623
         @cap_thickness = data[:cap_thickness]
         @hss_has_cap = data[:hss_has_cap]
 
+        @top_plate_thickness = data[:top_plate_thickness]
+        @base_plate_thickness = data[:base_plate_thickness]
+
         @h = values[:h].to_f #height of the tube
         @w = values[:b].to_f #width of the tube
 
@@ -76,6 +79,7 @@ module EA_Extensions623
         end
 
         @tube_name = "HSS #{data[:height_class]}x#{data[:width_class]} x#{data[:wall_thickness]}"
+        
         # p @tube_name
         @r = @tw#*RADIUS_RULE
 
@@ -744,7 +748,7 @@ module EA_Extensions623
           else
             top_plate = draw_parametric_plate(sq_plate(@w, @h), Plate_Type::TOP)
             #top_plate.name = "Top Plate"
-            slide_tpl_up = Geom::Transformation.translation(Geom::Vector3d.new(0,0,vec.length+STANDARD_CAP_PLATE_THICKNESS))
+            slide_tpl_up = Geom::Transformation.translation(Geom::Vector3d.new(0,0,vec.length+@top_plate_thickness))
             @hss_outer_group.entities.transform_entities slide_tpl_up, top_plate
 
             rot = Geom::Transformation.rotation(top_plate.bounds.center, Y_AXIS, 180.degrees)
@@ -755,7 +759,7 @@ module EA_Extensions623
             etch_plate(top_plate, @hss_inner_group)
           end
           @definition_list.remove(top_plate_def) if top_plate_def
-          color_by_thickness(top_plate, STANDARD_CAP_PLATE_THICKNESS)
+          color_by_thickness(top_plate, @top_plate_thickness)
           classify_as_plate(top_plate)
           
           #p get_child_groups(top_plate)[0]
@@ -839,10 +843,10 @@ module EA_Extensions623
           case pt
           when Plate_Type::TOP
             p "Top"
-            plate_thickness = STANDARD_CAP_PLATE_THICKNESS
+            plate_thickness = @top_plate_thickness
           when Plate_Type::BASE
             p "Base"
-            plate_thickness = STANDARD_BASE_PLATE_THICKNESS
+            plate_thickness = @base_plate_thickness
           end
           @baseplate_group = @hss_outer_group.entities.add_group
           #@baseplate_group.name = "BasePlate"
@@ -955,7 +959,7 @@ module EA_Extensions623
         file_path = Sketchup.find_support_file "#{COMPONENT_PATH}/#{THREEIGHTS_HOLE}", "Plugins"
         threeights = @definition_list.load file_path
         weephole = plate.entities.add_instance(threeights, ORIGIN)
-        scl_hole = Geom::Transformation.scaling(ORIGIN, 1,1,STANDARD_BASE_PLATE_THICKNESS/2)
+        scl_hole = Geom::Transformation.scaling(ORIGIN, 1,1,@base_plate_thickness/2)
         sld_vec = Geom::Vector3d.new(0,1.5,0)
         plate.entities.transform_entities scl_hole, weephole
         plate.entities.transform_entities sld_vec, weephole
@@ -1000,7 +1004,7 @@ module EA_Extensions623
             add_weephole(plate)
             etch_plate(plate, @hss_inner_group)
             add_plate_compass(plate, ORIGIN)
-            color_by_thickness(plate, STANDARD_BASE_PLATE_THICKNESS.to_f)
+            color_by_thickness(plate, @base_plate_thickness.to_f)
             classify_as_plate(plate)
             #plate.name = "Base Plate"
 
@@ -1016,7 +1020,7 @@ module EA_Extensions623
             slide_base = Geom::Transformation.translation(slide_vec)
             @bp = @base_group.entities.add_instance @base_plate, center
             etch_plate(@bp, @hss_inner_group)
-            color_by_thickness(@base_group, STANDARD_BASE_PLATE_THICKNESS.to_f)
+            color_by_thickness(@base_group, @base_plate_thickness.to_f)
             classify_as_plate(@base_group)
             #@base_group.name = "Base Plate"
             #@bp.name = "Base Plate"

@@ -38,9 +38,13 @@ module EA_Extensions623
 
           @@cap_thickness          = 0.25
           @@hss_has_cap            = true
+          
+          @@base_plate_thickness   = STANDARD_BASE_PLATE_THICKNESS
+          @@top_plate_thickness    = STANDARD_CAP_PLATE_THICKNESS
+
         end
 
-        @label_font = SKUI::Font.new( 'Comic Sans MS', 8, true )
+        @label_font = SKUI::Font.new( '3DSCAM', 8, true )
         @img_path = File.join( SKUI::PATH, '..', 'icons' )
         @img_file1 = File.join( @img_path, 'hss_section.png' )
         @img_file2 = File.join( @img_path, 'hss_rec_section.png' )
@@ -338,6 +342,17 @@ module EA_Extensions623
         ssp_label = SKUI::Label.new('Stud Spacing', stud_spacing_control)
         ssp_label.position(3,142)
         @group2.add_control(ssp_label)
+        thick_list = all_plate_thicknesses
+        base_plate_dropdown = SKUI::Listbox.new( thick_list )
+        top_plate_dropdown = SKUI::Listbox.new( thick_list )
+        base_plate_dropdown.value = @base_plate_thickness.to_s
+        top_plate_dropdown.value = @top_plate_thickness.to_s
+        base_plate_dropdown.position(110,140)
+        top_plate_dropdown.position(110,140)
+
+        @group2.add_control(base_plate_dropdown)
+        @group2.add_control(top_plate_dropdown)
+
 
         add_control_buttons(window)# <- Method
       end
@@ -521,7 +536,10 @@ module EA_Extensions623
             end_tolerance:     @@end_tolerance,
             hss_type:          @@hss_type,
             cap_thickness:     @@cap_thickness,
-            hss_has_cap:       @@hss_has_cap
+            hss_has_cap:       @@hss_has_cap,
+
+            base_plate_thickness: @@base_plate_thickness,
+            top_plate_thickness:  @@top_plate_thickness
           }
           # p "rotated rectangle = #{@@hss_is_rotated}"
           Sketchup.active_model.commit_operation
@@ -530,7 +548,7 @@ module EA_Extensions623
         }
 
         btn_ok.position( 5, -5 )
-        btn_ok.font = SKUI::Font.new( 'Comic Sans MS', 14, true )
+        btn_ok.font = SKUI::Font.new( '3DSCAM', 14, true )
         window.add_control( btn_ok )
 
         ####################
@@ -542,7 +560,7 @@ module EA_Extensions623
           Sketchup.send_action "selectSelectionTool:"
         }
         @btn_close.position( -5, -5 )
-        @btn_close.font = SKUI::Font.new( 'Comic Sans MS', 14, true )
+        @btn_close.font = SKUI::Font.new( '3DSCAM', 14, true )
         window.add_control( @btn_close )
 
         window.default_button = btn_ok
@@ -617,7 +635,7 @@ module EA_Extensions623
         @group2.position( 10, 95 )
         @group2.right = 20
         @group2.width = 410
-        @group2.height = 220
+        @group2.height = 235
         window.add_control( @group2 )
       end
 

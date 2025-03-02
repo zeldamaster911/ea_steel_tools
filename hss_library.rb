@@ -16,6 +16,13 @@ module EA_Extensions623
       end
       return hss
     end
+    def all_plate_thicknesses
+      pt = []
+      HSSLibrary::PlateThicknesses.each do |k, v|
+        pt << k
+      end
+      return pt
+    end
 
     #returns an array of all the beams within a height class
     def all_tubes_in(height_class)
@@ -30,7 +37,17 @@ module EA_Extensions623
       wall_thickness_list = HSSLibrary::HSS["#{height_class}"]["#{width_class}"][:tw]
       return wall_thickness_list
     end
-
+    PlateThicknesses = {
+      '1/4"' => {t:0.25},
+      '3/8"' => {t:0.375},
+      '1/2"' => {t:0.5},
+      '5/8"' => {t:0.625},
+      '3/4"' => {t:0.75},
+      '7/8"' => {t:0.875},
+      '1"' => {t:1},
+      '1 1/4"' => {t:1.25},
+      '1 1/2"' => {t:1.5},
+    }
     HSS = {
 
       "2" => {
