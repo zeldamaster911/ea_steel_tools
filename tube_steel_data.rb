@@ -292,50 +292,45 @@ module EA_Extensions623
       ######################################
 
       def draw_tube(vec)
-        #points on tube, 8 of them
+        # points on tube, 8 of them
         @points = [
-          pt1 = Geom::Point3d.new(@r,0,0),
-          pt2 = Geom::Point3d.new(@w-@r,0,0),
+          pt1 = Geom::Point3d.new(@r, 0, 0),
+          pt2 = Geom::Point3d.new(@w - @r, 0, 0),
           pt3 = Geom::Point3d.new(@w, @r, 0),
-          pt4 = Geom::Point3d.new(@w, (@h-@r), 0),
-          pt5 = Geom::Point3d.new(@w-@r, @h, 0),
+          pt4 = Geom::Point3d.new(@w, (@h - @r), 0),
+          pt5 = Geom::Point3d.new(@w - @r, @h, 0),
           pt6 = Geom::Point3d.new(@r, @h, 0),
-          pt7 = Geom::Point3d.new(0, (@h-@r), 0),
-          pt8 = Geom::Point3d.new(0, @r, 0),
+          pt7 = Geom::Point3d.new(0, (@h - @r), 0),
+          pt8 = Geom::Point3d.new(0, @r, 0)
         ]
-        # print @points
         inside_points = [
           ip1 = Geom::Point3d.new(@tw, @tw, 0),
-          ip2 = Geom::Point3d.new(@w-@tw, @tw, 0),
-          ip3 = Geom::Point3d.new(@w-@tw, (@h-@tw), 0),
-          ip4 = Geom::Point3d.new(@tw, (@h-@tw), 0),
+          ip2 = Geom::Point3d.new(@w - @tw, @tw, 0),
+          ip3 = Geom::Point3d.new(@w - @tw, (@h - @tw), 0),
+          ip4 = Geom::Point3d.new(@tw, (@h - @tw), 0),
           ip5 = Geom::Point3d.new(@tw, @tw, 0)
         ]
         radius_centers = [
           rc1 = Geom::Point3d.new(@r, @r, 0),
-          rc2 = Geom::Point3d.new((@w-@r), @r, 0),
-          rc3 = Geom::Point3d.new((@w-@r), (@h-@r), 0),
-          rc4 = Geom::Point3d.new(@r, (@h-@r), 0)
+          rc2 = Geom::Point3d.new((@w - @r), @r, 0),
+          rc3 = Geom::Point3d.new((@w - @r), (@h - @r), 0),
+          rc4 = Geom::Point3d.new(@r, (@h - @r), 0)
         ]
-
-        # rot = Geom::Transformation.axes([0, -@w/2, -@h/2], Y_AXIS, Z_AXIS, X_AXIS.reverse)
-
+      
         if !@is_column
           rot = Geom::Transformation.axes(ORIGIN, Y_AXIS, Z_AXIS, X_AXIS)
-          @points.each{|pt| pt.transform!(rot)}
-          inside_points.each{|pt| pt.transform!(rot)}
-          radius_centers.each{|pt| pt.transform!(rot)}
+          @points.each { |pt| pt.transform!(rot) }
+          inside_points.each { |pt| pt.transform!(rot) }
+          radius_centers.each { |pt| pt.transform!(rot) }
         end
-
+      
         set_groups
         outer_edges = @hss_inner_group.entities.add_face(@points)
-
-
+      
         ##################################################################
         ### THIS CODE CHANGES THE CHAMFER TO A RADIUS WHEN UNCOMMENTED ###
         ##################################################################
-
-        # ##Erases the chamfers before placing the rounded endges on the tube steel
+        # ## Erases the chamfers before placing the rounded edges on the tube steel
         # edges = outer_edges.edges
         # edges_to_delete = []
         # edges.each_with_index do |e, i|
@@ -344,11 +339,11 @@ module EA_Extensions623
         #     edges_to_delete << e
         #   end
         # end
-
+        #
         # edges_to_delete.each do |e|
         #   edges.delete(e)
         # end
-
+        #
         # ## Rotates the rounded corners into place
         # d1 = 180
         # d2 = 270
@@ -357,76 +352,72 @@ module EA_Extensions623
         #   d1 += 90
         #   d2 += 90
         # end
-
+        #
         # new_edges = @hss_inner_group.entities.add_face(edges.first.all_connected)
-
-
         #####################################################################
         #####################################################################
         #####################################################################
-
-        g1 = @hss_inner_group.entities.add_group #this group houses the inner offset of the tube steel
+      
+        g1 = @hss_inner_group.entities.add_group # this group houses the inner offset of the tube steel
         inner_edges = g1.entities.add_edges(inside_points)
-
-        ents = g1.explode.collect{|e| e if e.is_a? Sketchup::Edge}.compact
-        # UI.messagebox("#{ents}")
-
-        face_to_delete = ents[0].common_face ents[1]
+      
+        ents = g1.explode.collect { |e| e if e.is_a? Sketchup::Edge }.compact
+        face_to_delete = ents[0].common_face(ents[1])
         face_to_delete.erase! if face_to_delete
-
-        # centerpoint_group.locked = true
-
+      
         centerpoint_group = @hss_outer_group.entities.add_group
         @center_of_column = @hss_outer_group.bounds.center
         if !@is_column
-          main_face = @hss_inner_group.entities.select{|e| e.is_a? Sketchup::Face}[0]
-          slide_face = Geom::Transformation.translation(Geom::Vector3d.new(0,-@w/2, -@h/2))
+          main_face = @hss_inner_group.entities.select { |e| e.is_a? Sketchup::Face }[0]
+          slide_face = Geom::Transformation.translation(Geom::Vector3d.new(0, -@w / 2, -@h / 2))
           rot_face = Geom::Transformation.rotation(ORIGIN, Z_AXIS, 90.degrees)
         else
-          main_face = @hss_inner_group.entities.select{|e| e.is_a? Sketchup::Face}[0].reverse!
-          slide_face = Geom::Transformation.translation(Geom::Vector3d.new(-@w/2,-@h/2,0))
+          main_face = @hss_inner_group.entities.select { |e| e.is_a? Sketchup::Face }[0].reverse!
+          slide_face = Geom::Transformation.translation(Geom::Vector3d.new(-@w / 2, -@h / 2, 0))
           rot_face = Geom::Transformation.rotation(ORIGIN, X_AXIS, 270.degrees)
         end
-
-        @entities.transform_entities slide_face, @hss_outer_group
-        @entities.transform_entities rot_face, @hss_outer_group
-
+      
+        @entities.transform_entities(slide_face, @hss_outer_group)
+        @entities.transform_entities(rot_face, @hss_outer_group)
+      
         v1 = X_AXIS.clone.reverse
         v1.length = @w * 0.5
         sld_t_cx = Geom::Transformation.translation(v1)
-
+      
         v2 = Z_AXIS.clone.reverse
-        v2.length = @h* 0.5
+        v2.length = @h * 0.5
         sld_t_cy = Geom::Transformation.translation(v2)
-
+      
         mv_prof_to_c = sld_t_cx * sld_t_cy
-
-        # @entities.transform_entities mv_prof_to_c, @hss_outer_group
-        @material_names = @materials.map {|color| color.name}
+      
+        @material_names = @materials.map { |color| color.name }
         face2 = @hss_inner_group.copy
         face2.name = "test"
         p face2.name + " needs to be deleted "
         extrude_length = vec.clone
+      
         if @is_column
-          extrude_length.length = (vec.length - (@base_thickness*2)) - (@start_tolerance+@end_tolerance) #This thickness is accouting for bot top and bottom plate. if the top plates thickness is controlled it will need to be accounted for if it varies from the base thickness
+          # Calculate the tube (steel member) height based on the overall design:
+          # drawn length minus (base plate thickness + start tolerance) and (top plate thickness + end tolerance)
+          extrude_length.length = vec.length - ( @base_plate_thickness + @top_plate_thickness) - (@start_tolerance + @end_tolerance)
           extrude_tube(extrude_length, main_face)
           add_studs(extrude_length.length, @@stud_spacing)
           add_up_arrow(extrude_length.length, @@stud_spacing)
           add_name_label(vec)
           add_direction_labels()
-          align_tube(vec, @hss_outer_group)
-         
+          # Instead of using the original vec for alignment (which was using @base_thickness),
+          # create a modified vector with length = (@base_plate_thickness + @start_tolerance)
+          modified_vec = vec.clone
+          modified_vec.length = (@base_plate_thickness + @start_tolerance)
+          align_tube(modified_vec, @hss_outer_group)
           insert_base_plates(@base_type, @center_of_column)
           insert_top_plate(@center_of_column, extrude_length)
-
           add_reference_cross(inside_points, extrude_length, face2)
           face2.locked = false
           face2.erase!
-
-
         else
           if @hss_has_cap
-            extrude_length.length = (vec.length - (@cap_thickness*2))
+            extrude_length.length = vec.length - (@cap_thickness * 2)
           else
             extrude_length.length = vec.length
           end
@@ -441,6 +432,10 @@ module EA_Extensions623
         end
         set_layer(@hss_name_group, STEEL_LAYER)
       end
+      
+      
+
+      
       def get_child_groups(parent_group)
         parent_group.entities.grep(Sketchup::Group)
       end
@@ -1434,7 +1429,7 @@ module EA_Extensions623
           group.transform! @trans #Fixed this so the column is not scaled
           adjustment_vec = vec.clone
           if @is_column
-            adjustment_vec.length = (@base_thickness+@start_tolerance) #this ,ight also need to account for the height from slab (1 1/2")
+            adjustment_vec.length = (@base_plate_thickness+@start_tolerance) #this ,ight also need to account for the height from slab (1 1/2")
           else
             if @hss_has_cap
               adjustment_vec.length = @cap_thickness #this ,ight also need to account for the height from slab (1 1/2")
