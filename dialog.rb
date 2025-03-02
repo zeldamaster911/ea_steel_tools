@@ -31,7 +31,7 @@ module EA_Extensions623
         end
 
         options = {
-          :title           => "Wide Flange Steel #{VERSION_NUM}",
+          :title           => "Wide Flange Steel #{STEEL_EXTENSION.version}",
           :preferences_key => 'WFS',
           :width           => 416,
           :height          => 475,
@@ -39,6 +39,7 @@ module EA_Extensions623
         }
 
         window = SKUI::Window.new( options )
+
         @window1 = window
 
         # These events doesn't trigger correctly when Firebug Lite

@@ -11,6 +11,20 @@ module EA_Extensions623
         view.lock_inference if view.inference_locked?
       end
 
+      # NOT USED - CONFLICTS WITH EXISTING COLORS
+      def self.install_colors(model)
+        materials = model.materials
+        STEEL_COLORS.each_key do |color|
+          if materials[STEEL_COLORS[color][:name]]
+            p 'color exists'
+            next
+          else
+            new_color = materials.add(STEEL_COLORS[color][:name])
+            new_color.color = Sketchup::Color.new STEEL_COLORS[color][:rgba]
+          end
+        end
+      end
+
       def set_layer(part, layer)
         layers = Sketchup.active_model.layers.collect{|l| l.name}
         # p layer
@@ -25,7 +39,7 @@ module EA_Extensions623
       end
 
       def classify_as_plate(plate)
-        plate.definition.add_classification(CLSSFR_LIB, CLSSFY_PLT)
+        plate.definition.add_classification(PLATE_DICTIONARY, SCHEMA_VALUE)
         set_layer(plate, STEEL_LAYER)
         # add_observer_to_plate(plate)
         return plate
@@ -37,6 +51,15 @@ module EA_Extensions623
 
       def lock_scale_toX(plate)
         plate.definition.behavior.no_scale_mask=(126)
+      end
+
+      def add_message(message)
+        pop = UI::Notification.new(STEEL_EXTENSION, message)
+        title = "LOOK OUT!"
+        pop.on_accept("Got It") do |pop, title|
+          p 'got it'
+        end
+        pop.show
       end
 
       # def lock_scale_toY(plate)

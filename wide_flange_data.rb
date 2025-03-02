@@ -8,7 +8,6 @@ module EA_Extensions623
       # This is the standard Ruby initialize method that is called when you create
       # a new object.
       def initialize(data)
-        #returns the avtive model material list
         @model = Sketchup.active_model
         @entities = @model.active_entities
         @selection = @model.selection
@@ -70,6 +69,8 @@ module EA_Extensions623
         @x_red = @model.axes.axes[0]
         @y_green = @model.axes.axes[1]
         @z_blue = @model.axes.axes[2]
+
+        @all_studs = []
 
         if @@flange_type == FLANGE_TYPE_COL
           @is_column = true
@@ -350,7 +351,7 @@ module EA_Extensions623
           face = beam_ents.add_face segs
 
           if @is_column
-            length = length - STANDARD_BASE_PLATE_THICKNESS
+            length = length - ONE_INCH_BASEPLATE
           end
 
           face.pushpull length
@@ -487,7 +488,6 @@ module EA_Extensions623
 
 
           #initialize some variables
-          @all_studs = []
           count = 0
 
           #Setst the scale depth for the web and the flange
@@ -571,7 +571,7 @@ module EA_Extensions623
           @outer_group.entities.transform_entities(center, @baseplate_group)
           align = Geom::Transformation.rotation(Geom::Point3d.new(0, 0, @h/2), Y_AXIS, 90.degrees)
           @outer_group.entities.transform_entities(align, @baseplate_group)
-          vector = Geom::Vector3d.new(STANDARD_BASE_PLATE_THICKNESS, 0, 0)
+          vector = Geom::Vector3d.new(ONE_INCH_BASEPLATE, 0, 0)
           sld = Geom::Transformation.translation(vector)
           @outer_group.entities.transform_entities(sld, @baseplate_group)
 
@@ -612,11 +612,11 @@ module EA_Extensions623
             end
           end
 
-          face.pushpull STANDARD_BASE_PLATE_THICKNESS
+          face.pushpull ONE_INCH_BASEPLATE
 
           @baseplate_group.entities.each do |e|
             if e.class == Sketchup::Edge
-              if e.length == 0.75
+              if e.length == ONE_INCH_BASEPLATE
                 e.soft = true
                 e.smooth = true
               else
@@ -627,21 +627,30 @@ module EA_Extensions623
             end
           end
 
-          color_by_thickness(@baseplate_group, 0.875)
+          color_by_thickness(@baseplate_group, ONE_INCH_BASEPLATE)
 
-          bh_file = Sketchup.find_support_file("#{COMPONENT_PATH}/#{THRTN_SXTNTHS_HOLE}", "Plugins")
+          bh_file = Sketchup.find_support_file("#{COMPONENT_PATH}/#{SVNEGHTHS_HOLE}", "Plugins")
           bh_def = @definition_list.load bh_file
 
           big_hole = @baseplate_group.entities.add_instance bh_def, ORIGIN
 
           v1 = X_AXIS.clone
           v2 = Y_AXIS.clone
+          v2 = Y_AXIS.clone
+######################################################################################
+### THIS NEEDS TO TAKE A HOLE PATTERN OPTION FROM THE USER FOR A 5x5 or 6x6 bolt patter for flage columns, default to 5x5
+######################################################################################
 
-          v1.length = (@w/2)+(STANDARD_BASE_MARGIN.to_f/2)
-          v2.length = (@h/2)+(STANDARD_BASE_MARGIN.to_f/2)
+
+          # v1.length = (@w/2)+(STANDARD_BASE_MARGIN.to_f/2)
+          # v2.length = (@h/2)+(STANDARD_BASE_MARGIN.to_f/2)
+          v1.length = 2.5
+          v2.length = 2.5
+
+
           tr1 = Geom::Transformation.translation(v1)
           tr2 = Geom::Transformation.translation(v2)
-          scl_hole = Geom::Transformation.scaling(ORIGIN, 1,1,STANDARD_BASE_PLATE_THICKNESS/2)
+          scl_hole = Geom::Transformation.scaling(ORIGIN, 1,1,ONE_INCH_BASEPLATE/2)
           @baseplate_group.entities.transform_entities scl_hole, big_hole
 
           @baseplate_group.entities.transform_entities tr1, big_hole
@@ -655,7 +664,8 @@ module EA_Extensions623
           bh4 = big_hole.copy
 
           v3 = v1.clone.reverse
-          v3.length = @w+STANDARD_BASE_MARGIN
+          # v3.length = @w+STANDARD_BASE_MARGIN
+          v3.length = 5
 
           tr3 = Geom::Transformation.translation(v3)
 
@@ -671,8 +681,22 @@ module EA_Extensions623
           UI.messagebox("There was a problem inserting the base plate")
         end
       end
-      ##########################################
-      ##########################################
+
+      def add_column_etch(face)
+        etch_group = @inner_group.entities.add_group
+        etch_group.name = "etch"
+
+        pt100 = Geom::Point3d.new(0, @w/2, @h)
+        pt200 = Geom::Point3d.new(0,-@w/2,0)
+        etch_group.entities.add_line(pt100, pt200)
+        pt300 = Geom::Point3d.new(0, -@w/2, @h)
+        pt400 = Geom::Point3d.new(0, @w/2, 0)
+        etch_group.entities.add_line(pt300, pt400)
+        v = Geom::Vector3d.new(-ONE_INCH_BASEPLATE,0,0)
+
+        move_etch = Geom::Transformation.translation(v)
+        @inner_group.entities.transform_entities(move_etch, etch_group)
+      end
 
       def add_13_16_holes(length)
         begin
@@ -693,7 +717,7 @@ module EA_Extensions623
           end
 
           # Load the 13/16" holes from the collection
-          file_path2 = Sketchup.find_support_file "#{COMPONENT_PATH}/#{THRTN_SXTNTHS_HOLE}", "Plugins/"
+          file_path2 = Sketchup.find_support_file "#{COMPONENT_PATH}/#{SVNEGHTHS_HOLE}", "Plugins/"
           thirteen_sixteenths_hole = @definition_list.load file_path2
 
           #initialize some variables
@@ -847,10 +871,10 @@ module EA_Extensions623
             comp_def = @definition_list.add "#{@@beam_name}"
             comp_def.description = "The #{@@beam_name} label"
             ents = comp_def.entities
-            _3d_text = ents.add_3d_text("#{@@beam_name}", TextAlignCenter, "#{STEEL_FONT}", false, false, 3.0, 3.0, 0.0, false, 0.0)
-            # p "loaded CamBam_Stick_7: #{_3d_text}"
-            save_path = Sketchup.find_support_file "Components", ""
-            comp_def.save_as(save_path + "/#{@@beam_name}.skp")
+            _3d_text = ents.add_3d_text(@@beam_name, TextAlignCenter, STEEL_FONT, false, false, 3.0, 0.0, 0.0, false, 0.0)
+            # p _3d_text
+            # save_path = Sketchup.find_support_file "Components", ""
+            # comp_def.save_as(save_path + "/#{@@beam_name}.skp")
           end
 
           file_path = Sketchup.find_support_file "#{COMPONENT_PATH}/#{UP_DRCTN}", "Plugins/"
@@ -977,9 +1001,9 @@ module EA_Extensions623
             comp_def = @definition_list.add "#{@@beam_name}"
             comp_def.description = "The #{@@beam_name} label"
             ents = comp_def.entities
-            _3d_text = ents.add_3d_text("#{@@beam_name}", TextAlignCenter, STEEL_FONT, false, false, 3.0, 3.0, 0.0, false, 0.0)
-            save_path = Sketchup.find_support_file "Components", ""
-            comp_def.save_as(save_path + "/#{@@beam_name}.skp")
+            _3d_text = ents.add_3d_text("#{@@beam_name}", TextAlignCenter, STEEL_FONT, false, false, 3.0, 0.0, 0.0, false, 0.0)
+            # save_path = Sketchup.find_support_file "Components", ""
+            # comp_def.save_as(save_path + "/#{@@beam_name}.skp")
           end
 
           file_path = Sketchup.find_support_file "#{COMPONENT_PATH}/#{UP_DRCTN}", "Plugins/"
@@ -1321,7 +1345,7 @@ module EA_Extensions623
             thirteen_sixteenths_holes = add_13_16_holes(length) unless @hc < 6 && @@has_holes
           end
 
-          all_labels.each {|label| label.layer = @labels_layer}
+          all_labels.each {|label| set_layer(label, LABELS_LAYER)}
 
           #add holes to the beam
           add_9_16_flange_holes(length) if @@has_holes
@@ -1356,7 +1380,7 @@ module EA_Extensions623
           end
 
           if not @all_studs.empty?
-            @all_studs.each {|stud| stud.layer = STEEL_LAYER }
+            @all_studs.each {|stud| stud.layer = STUD_LAYER }
             @all_studs.each {|stud| color_by_thickness(stud, 0.5)}
           end
 
@@ -1383,6 +1407,16 @@ module EA_Extensions623
 
           #draw and classify the baseplate of a flang column
           classify_as_plate(draw_parametric_plate(sq_plate(@w, @h))) if column
+
+
+
+
+          add_column_etch(sq_plate(@w, @h)) if column ### NEW NEW NEW NEW NEW NEW NEW NEW NEW NE WNE 
+
+
+
+
+
           #insert moment clip if column
           insert_moment_clip(length) if column
 
@@ -1414,7 +1448,7 @@ module EA_Extensions623
             setbak2  = Geom::Transformation.rotation(ORIGIN, Z_AXIS, 90.degrees)
             @entities.transform_entities((setbak*setbak2), @outer_group)
 
-            vector = Geom::Vector3d.new(0, 0, STANDARD_BASE_PLATE_THICKNESS)
+            vector = Geom::Vector3d.new(0, 0, ONE_INCH_BASEPLATE)
             sld = Geom::Transformation.translation(vector)
             @entities.transform_entities(sld, @inner_group)
 
