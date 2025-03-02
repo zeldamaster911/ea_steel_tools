@@ -31,17 +31,31 @@ module EA_Extensions623
           @@stud_toggle           = true
           @@hss_is_rotated        = false
 
-          @@start_tolerance        = 1.5
-          @@end_tolerance          = 0.0
+          @@start_tolerance       = 1.5
+          @@end_tolerance         = 0.0
 
-          @@hss_type               = '' # Beam or Column Options
+          @@hss_type              = '' # Beam or Column Options
 
-          @@cap_thickness          = 0.25
-          @@hss_has_cap            = true
+          @@cap_thickness         = 0.25
+          @@hss_has_cap           = true
           
-          @@base_plate_thickness   = STANDARD_BASE_PLATE_THICKNESS
-          @@top_plate_thickness    = STANDARD_CAP_PLATE_THICKNESS
-
+          # Assuming PlateThicknesses is defined as:
+          # PlateThicknesses = {
+          #   '1/4"'   => {t: 0.25},
+          #   '3/8"'   => {t: 0.375},
+          #   '1/2"'   => {t: 0.5},
+          #   '5/8"'   => {t: 0.625},
+          #   '3/4"'   => {t: 0.75},
+          #   '7/8"'   => {t: 0.875},
+          #   '1"'     => {t: 1},
+          #   '1 1/4"' => {t: 1.25},
+          #   '1 1/2"' => {t: 1.5},
+          # }
+          # Convert the standard thickness values to valid keys and then store the t value.
+          base_key = PlateThicknesses.find { |k, v| v[:t] == STANDARD_BASE_PLATE_THICKNESS }[0]
+          cap_key  = PlateThicknesses.find { |k, v| v[:t] == STANDARD_CAP_PLATE_THICKNESS }[0]
+          @@base_plate_thickness = PlateThicknesses[base_key][:t]
+          @@top_plate_thickness  = PlateThicknesses[cap_key][:t]
         end
 
         @label_font = SKUI::Font.new( '3DSCAM', 8, true )
@@ -85,7 +99,6 @@ module EA_Extensions623
         @group2.add_control @rotate_hss
         @rotate_hss.visible = !(@@width_class.to_f == @@height_class.to_f)
 
-
         hss_type_label = SKUI::Label.new('Type')
         hss_type_label.position(265,30)
         @group1.add_control( hss_type_label )
@@ -109,14 +122,11 @@ module EA_Extensions623
         @baseselect.on(:change) { |control, value|
           @@basetype = control.value
         }
-
         @group2.add_control(@baseselect)
-
         base_s_label = SKUI::Label.new('Base Plate', @baseselect)
         base_s_label.position(5, 33)
         base_s_label.visible = (@@hss_type == 'Column')
         @group2.add_control(base_s_label)
-
 
         hss_beam_cap_label = SKUI::Label.new("Cap Thickness")
         hss_beam_cap_label.position(5,43)
@@ -143,23 +153,19 @@ module EA_Extensions623
         }
         @group2.add_control(hss_has_cap_select)
 
-
         start_tol = SKUI::Textbox.new (@@start_tolerance.to_f)
         start_tol.name = :start_tolerance
         start_tol.position(110,100)
         start_tol.width = 75
-        # start_tol.height = 20
         start_tol.on( :textchange ) { |control|
           @@start_tolerance = control.value.to_s.to_r.to_f
         }
         @group2.add_control start_tol
 
-
         end_tol = SKUI::Textbox.new (@@end_tolerance.to_f)
         end_tol.name = :start_tolerance
         end_tol.position(110,75)
         end_tol.width = 75
-        # end_tol.height = 20
         end_tol.on( :textchange ) { |control|
           @@end_tolerance = control.value.to_s.to_r.to_f
         }
@@ -173,13 +179,11 @@ module EA_Extensions623
         end_tol_label.position(5, 103)
         @group2.add_control(end_tol_label)
 
-
         stud_toggle = SKUI::Checkbox.new("\r\n Toggle Studs")
         stud_toggle.font = @label_font
         stud_toggle.position(316,20+ss_y)
         stud_toggle.checked = @@stud_toggle
         @group2.add_control stud_toggle
-
 
         north_stud_selct = SKUI::Checkbox.new('N')
         north_stud_selct.font = @label_font
@@ -190,7 +194,6 @@ module EA_Extensions623
           @@north_stud_selct = control.checked?
           stud_toggle.checked = false if not control.checked?
         }
-
         @group2.add_control(north_stud_selct)
 
         south_stud_selct = SKUI::Checkbox.new('S')
@@ -202,7 +205,6 @@ module EA_Extensions623
           @@south_stud_selct = control.checked?
           stud_toggle.checked = false if not control.checked?
         }
-
         @group2.add_control(south_stud_selct)
 
         east_stud_selct = SKUI::Checkbox.new('E')
@@ -214,7 +216,6 @@ module EA_Extensions623
           @@east_stud_selct = control.checked?
           stud_toggle.checked = false if not control.checked?
         }
-
         @group2.add_control(east_stud_selct)
 
         west_stud_selct = SKUI::Checkbox.new('W')
@@ -226,7 +227,6 @@ module EA_Extensions623
           @@west_stud_selct = control.checked?
           stud_toggle.checked = false if not control.checked?
         }
-
         @group2.add_control(west_stud_selct)
 
         top_stud_selct = SKUI::Checkbox.new('T')
@@ -238,7 +238,6 @@ module EA_Extensions623
           @@north_stud_selct = control.checked?
           stud_toggle.checked = false if not control.checked?
         }
-
         @group2.add_control(top_stud_selct)
 
         bottom_stud_selct = SKUI::Checkbox.new('B')
@@ -250,7 +249,6 @@ module EA_Extensions623
           @@south_stud_selct = control.checked?
           stud_toggle.checked = false if not control.checked?
         }
-
         @group2.add_control(bottom_stud_selct)
 
         right_stud_selct = SKUI::Checkbox.new('R')
@@ -262,7 +260,6 @@ module EA_Extensions623
           @@west_stud_selct = control.checked?
           stud_toggle.checked = false if not control.checked?
         }
-
         @group2.add_control(right_stud_selct)
 
         left_stud_selct = SKUI::Checkbox.new('L')
@@ -274,10 +271,7 @@ module EA_Extensions623
           @@east_stud_selct = control.checked?
           stud_toggle.checked = false if not control.checked?
         }
-
         @group2.add_control(left_stud_selct)
-
-
 
 ############################################################################
 #                HSS TYPE SELECTION FROM COLUMN TOP BEAM
@@ -319,7 +313,6 @@ module EA_Extensions623
           west_stud_selct.checked = control.checked?
           @@west_stud_selct = control.checked?
 
-
           top_stud_selct.checked = control.checked?
           @@top_stud_selct = control.checked?
           bottom_stud_selct.checked = control.checked?
@@ -329,7 +322,6 @@ module EA_Extensions623
           left_stud_selct.checked = control.checked?
           @@left_stud_selct = control.checked?
         }
-
 
         stud_spacing_control = SKUI::Textbox.new(@@studspacing.to_s.to_r.to_f)
         stud_spacing_control.position(110,140)
@@ -342,17 +334,37 @@ module EA_Extensions623
         ssp_label = SKUI::Label.new('Stud Spacing', stud_spacing_control)
         ssp_label.position(3,142)
         @group2.add_control(ssp_label)
+
+        # Base Plate and Top Plate Thickness Dropdowns
         thick_list = all_plate_thicknesses
-        base_plate_dropdown = SKUI::Listbox.new( thick_list )
-        top_plate_dropdown = SKUI::Listbox.new( thick_list )
-        base_plate_dropdown.value = @base_plate_thickness.to_s
-        top_plate_dropdown.value = @top_plate_thickness.to_s
-        base_plate_dropdown.position(110,140)
-        top_plate_dropdown.position(110,140)
+        base_plate_dropdown = SKUI::Listbox.new(thick_list)
+        top_plate_dropdown = SKUI::Listbox.new(thick_list)
+        # Find the keys matching the current t values
+        base_key_for_dropdown = PlateThicknesses.find { |k, v| v[:t] == @@base_plate_thickness }[0]
+        top_key_for_dropdown  = PlateThicknesses.find { |k, v| v[:t] == @@top_plate_thickness }[0]
+        base_plate_dropdown.value = base_key_for_dropdown
+        top_plate_dropdown.value = top_key_for_dropdown
+        base_plate_dropdown.position(110,170)
+        top_plate_dropdown.position(110,200)
+        base_plate_dropdown.width = 75
+        top_plate_dropdown.width = 75
+
+        base_plate_dropdown.on(:change) { |control, value|
+          @@base_plate_thickness = PlateThicknesses[control.value][:t]
+        }
+        top_plate_dropdown.on(:change) { |control, value|
+          @@top_plate_thickness = PlateThicknesses[control.value][:t]
+        }
+
+        base_plate_label = SKUI::Label.new('Base Plate Thickness', base_plate_dropdown)
+        base_plate_label.position(5,170)
+        top_plate_label = SKUI::Label.new('Top Plate Thickness', top_plate_dropdown)
+        top_plate_label.position(5,200)
 
         @group2.add_control(base_plate_dropdown)
         @group2.add_control(top_plate_dropdown)
-
+        @group2.add_control(base_plate_label)
+        @group2.add_control(top_plate_label)
 
         add_control_buttons(window)# <- Method
       end
@@ -376,7 +388,6 @@ module EA_Extensions623
         height_class_dropdown.position( 40, 25 )
         height_class_dropdown.width = 55
 
-
         list2 = all_tubes_in(@@height_class)
         width_size_dropdown = SKUI::Listbox.new( list2 )
         @@width_class.empty? ? @@width_class = (width_size_dropdown.value = width_size_dropdown.items.first) : @@width_class = (width_size_dropdown.value = width_size_dropdown.items.grep(@@width_class).first.to_s)
@@ -385,9 +396,7 @@ module EA_Extensions623
 
         @group1.add_control( width_size_dropdown )
 
-        # list3 = cuurent_selection_wall_thickness(@@width_class)
         list3 = all_guage_options_in(@@height_class, @@width_class)
-        # p list3
         wall_thickness_dropdown = SKUI::Listbox.new( list3 )
         if @@wall_thickness.empty?
           @@wall_thickness = (wall_thickness_dropdown.items.include?('1/4"') ? '1/4"' : wall_thickness_dropdown.items.first)
@@ -512,32 +521,27 @@ module EA_Extensions623
         }
       end
 
-      # def add_hss_selections()
-
-      # end
-
       def add_control_buttons(window)
         btn_ok = SKUI::Button.new( 'OK' ) { |control|
           @@beam_data = find_tube(@@height_class, @@width_class)
           @data = {
-            height_class:      @@height_class,
-            width_class:       @@width_class,
-            wall_thickness:    @@wall_thickness,
-            data:              @@beam_data,
-            base_type:         @@basetype,
-            base_thick:        @@basethick,
-            stud_spacing:      @@studspacing,
-            north_stud_selct:  @@north_stud_selct,
-            south_stud_selct:  @@south_stud_selct,
-            east_stud_selct:   @@east_stud_selct,
-            west_stud_selct:   @@west_stud_selct,
-            hss_is_rotated:    @@hss_is_rotated,
-            start_tolerance:   @@start_tolerance,
-            end_tolerance:     @@end_tolerance,
-            hss_type:          @@hss_type,
-            cap_thickness:     @@cap_thickness,
-            hss_has_cap:       @@hss_has_cap,
-
+            height_class:       @@height_class,
+            width_class:        @@width_class,
+            wall_thickness:     @@wall_thickness,
+            data:               @@beam_data,
+            base_type:          @@basetype,
+            base_thick:         @@basethick,
+            stud_spacing:       @@studspacing,
+            north_stud_selct:   @@north_stud_selct,
+            south_stud_selct:   @@south_stud_selct,
+            east_stud_selct:    @@east_stud_selct,
+            west_stud_selct:    @@west_stud_selct,
+            hss_is_rotated:     @@hss_is_rotated,
+            start_tolerance:    @@start_tolerance,
+            end_tolerance:      @@end_tolerance,
+            hss_type:           @@hss_type,
+            cap_thickness:      @@cap_thickness,
+            hss_has_cap:        @@hss_has_cap,
             base_plate_thickness: @@base_plate_thickness,
             top_plate_thickness:  @@top_plate_thickness
           }
