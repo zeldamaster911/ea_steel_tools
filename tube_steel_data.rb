@@ -187,7 +187,7 @@ module EA_Extensions623
       def draw_beam_caps(length)
         begin
           cap = @hss_outer_group.entities.add_group
-          cap.name = "Cap"
+          #cap.name = "Cap"
           if @tw > 0.375
             pts = [
               pt1 = [0,0,0],
@@ -475,7 +475,7 @@ module EA_Extensions623
       def add_beam_up_arrow(vec, length)
         begin
           up_group = @hss_name_group.entities.add_group()
-          up_group.name = "UpArrows"
+          #up_group.name = "UpArrows"
           file_path = Sketchup.find_support_file "#{COMPONENT_PATH}/#{UP_DRCTN_MD}", "Plugins/"
           up_direction = @definition_list.load file_path
 
@@ -516,7 +516,7 @@ module EA_Extensions623
           end_direction_group = @hss_name_group.entities.add_group
           end_ents = end_direction_group.entities
           up_direction_group = @hss_name_group.entities.add_group
-          up_direction_group.name = "UpArrowGroup"
+          #up_direction_group.name = "UpArrowGroup"
           up_ents = up_direction_group.entities
 
           beam_direction = vec
@@ -728,7 +728,7 @@ module EA_Extensions623
       def insert_top_plate(center, vec)
         begin
           top_plate = @hss_outer_group.entities.add_group
-          top_plate.name = "Top Plate"
+          #top_plate.name = "Top Plate"
           if @w <= STANDARD_TOP_PLATE_SIZE
             file_path2 = Sketchup.find_support_file "#{COMPONENT_PATH}/#{HSSBLANKCAP}", "Plugins"
 
@@ -743,7 +743,7 @@ module EA_Extensions623
             
           else
             top_plate = draw_parametric_plate(sq_plate(@w, @h), Plate_Type::TOP)
-            top_plate.name = "Top Plate"
+            #top_plate.name = "Top Plate"
             slide_tpl_up = Geom::Transformation.translation(Geom::Vector3d.new(0,0,vec.length+STANDARD_CAP_PLATE_THICKNESS))
             @hss_outer_group.entities.transform_entities slide_tpl_up, top_plate
 
@@ -845,7 +845,7 @@ module EA_Extensions623
             plate_thickness = STANDARD_BASE_PLATE_THICKNESS
           end
           @baseplate_group = @hss_outer_group.entities.add_group
-          @baseplate_group.name = "BasePlate"
+          #@baseplate_group.name = "BasePlate"
           face = @baseplate_group.entities.add_face pts
           vec = @center_of_column - @baseplate_group.bounds.center
           center = Geom::Transformation.translation(vec)
@@ -1002,13 +1002,13 @@ module EA_Extensions623
             add_plate_compass(plate, ORIGIN)
             color_by_thickness(plate, STANDARD_BASE_PLATE_THICKNESS.to_f)
             classify_as_plate(plate)
-            plate.name = "Base Plate"
+            #plate.name = "Base Plate"
 
           else
             # p 'grabbed plate from library'
             @base_group = @hss_outer_group.entities.add_group
-             @base_group.name = 'Base Plate' #(Updated to code below for naming the group)
-            #@base_group.name = "#{@w.to_i}'' #{type}"
+            #@base_group.name = 'Base Plate' #(Updated to code below for naming the group)
+            @base_group.name = "#{@w.to_i}'' #{type}"
 
             @base_plate = @definition_list.load file_path1
 
@@ -1018,8 +1018,8 @@ module EA_Extensions623
             etch_plate(@bp, @hss_inner_group)
             color_by_thickness(@base_group, STANDARD_BASE_PLATE_THICKNESS.to_f)
             classify_as_plate(@base_group)
-            @base_group.name = "Base Plate"
-            @bp.name = "Base Plate"
+            #@base_group.name = "Base Plate"
+            #@bp.name = "Base Plate"
             @bp.explode
             @definition_list.remove(@base_plate)
           end
