@@ -83,7 +83,7 @@ module EA_Extensions623
 
 
         hss_type_label = SKUI::Label.new('Type')
-        hss_type_label.position(265,27)
+        hss_type_label.position(265,30)
         @group1.add_control( hss_type_label )
 
         @hss_types = ["Column", "Beam"]
@@ -170,9 +170,9 @@ module EA_Extensions623
         @group2.add_control(end_tol_label)
 
 
-        stud_toggle = SKUI::Checkbox.new("Toggle Studs")
+        stud_toggle = SKUI::Checkbox.new("\r\n Toggle Studs")
         stud_toggle.font = @label_font
-        stud_toggle.position(350,20)
+        stud_toggle.position(316,20+ss_y)
         stud_toggle.checked = @@stud_toggle
         @group2.add_control stud_toggle
 
@@ -344,7 +344,7 @@ module EA_Extensions623
 
       def setup_hss_size_selections
         hc_list_label = SKUI::Label.new('Size')
-        hc_list_label.position(10,27)
+        hc_list_label.position(10,30)
 
         label1 = SKUI::Label.new('X')
         label1.position(100,30)
