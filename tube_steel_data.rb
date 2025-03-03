@@ -458,7 +458,7 @@ module EA_Extensions623
         v.length = seperation_dist.length
         @hss_name_group.entities.transform_entities(v, reference_cross2)
 
-        v.length = @base_thickness
+        v.length = @base_plate_thickness
         reference_cross3 = reference_cross.copy
 
         @hss_name_group.entities.transform_entities(v.reverse, reference_cross3)
