@@ -664,135 +664,281 @@ module EA_Extensions623
       # end
       ###################DELETE ME#################
 
+  
+# Define the method "spread_plates" which arranges plate entities by filtering, sorting,
+# copying, transforming, and labeling them.
       def spread_plates
+        # Begin a block to catch exceptions so that any errors can be handled gracefully.
         begin
-        copies = []
-        alph = ("A".."Z").to_a
-        plates2 = @d_list.map{|pl| pl if alph.include? pl.name}.compact!
-        plates = sort_plates_for_spreading(plates2)
-
-        next_distance = 0
-        last_plate_width = 0
-        dist = 1
-
-        label_locs = []
-        @plate_group = @entities.add_group
-        # @plate_group.instance.name = 'Plates'
-        plates.compact!
-        @model.start_operation("spread a plate", true)
-        plates.each do |pl|
-          diag_length = pl.bounds.diagonal
-          insertion_pt = [dist, -diag_length, 0]
-          pl_cpy = @plate_group.entities.add_instance pl, insertion_pt
-          copies.push pl_cpy
-          pl_cpy.material = pl.instances.first.material
-
-          #compare copy to scraped plates
-          copy_def = pl_cpy.definition
-          prop_def = @named_plate_definitions.select {|pd| pd if pd == copy_def}
-          x = prop_def[0].instances.first.transformation.xscale
-          y = prop_def[0].instances.first.transformation.yscale
-          z = prop_def[0].instances.first.transformation.zscale
-
-          trans = Geom::Transformation.scaling(x,y,z) #Test this after the brute one dont work
-
-          pl_cpy_trans = pl_cpy.transform! trans
-          plate_count = ((pl_cpy.definition.count_instances) - 1)
-          ####################################################################
-          ####################################################################
-          temp_group = @entities.add_group()
-          temp_plate = temp_group.entities.add_instance pl, ORIGIN
-          temp_group.material = pl.instances[0].material
-          temp_plate.transform! trans
-          temp_plate.make_unique
-          # p temp_plate
-          temp_plate.explode #may need to do some special exploding on column plates
-          temp_component = temp_group.to_component
-          verified_thickness = get_plate_thickness_verified(temp_component)
-          pl_cpy.definition.attribute_dictionary(PLATE_DICTIONARY)[TH_LABEL] = verified_thickness.to_f
-          pl_cpy.definition.attribute_dictionary(PLATE_DICTIONARY)[M_LABEL] = verified_thickness.to_r.to_s
-
-          ####################################################################
-          ####################################################################
-
-
-          # Setting the QTY attribute
-          pl_cpy.definition.attribute_dictionary(PLATE_DICTIONARY)[Q_LABEL] = plate_count
-
-          pl_cpy.name = "x"+ plate_count.to_s
-          # pl_cpy.name = "#{@steel_member.name}-#{pl.material.to_r.to_f}-#{((pl_cpy.definition.count_instances) - 1)}"
-
-          explode_to_plate_standards(pl_cpy.definition.entities)
-
-          if face = get_largest_face(pl_cpy)
-            pl_norm = face.normal
-          else
-            p 'found nil'
-            next
-          end
-
-          if not pl_norm.parallel? Z_AXIS
-            if pl_norm.parallel? X_AXIS
-              rotation1 = pl_norm.angle_between Y_AXIS
-              rotation2 = pl_norm.angle_between Z_AXIS
-              pl_cpy.transform! (Geom::Transformation.rotation insertion_pt, [0,0,1], rotation1)
-              pl_cpy.transform! (Geom::Transformation.rotation insertion_pt, [1,0,0], rotation2)
+          # Initialize an empty array to store the copies of the plates that will be created.
+          plate_copies = []  # Changed 'copies' to 'plate_copies'
+          
+          # Create an array of uppercase letters from "A" to "Z" which is used to filter the plates by name.
+          alphabet = ("A".."Z").to_a  # Changed 'alph' to 'alphabet'
+          
+          # Filter the list of plates (@d_list) to include only those plates whose name is one of the letters in the alphabet.
+          # The block returns the plate if its name is included in the alphabet array.
+          # Then, compact! is called to remove any nil values from the result.
+          filtered_plates = @d_list.map { |plate| plate if alphabet.include? plate.name }.compact!
+          
+          # Sort the filtered plates by calling a helper method that prepares them for the spreading process.
+          sorted_plates = sort_plates_for_spreading(filtered_plates)
+          
+          # Initialize a variable for the next distance value; however, note that this variable is not used further.
+          next_distance = 0  # Unused variable, not renamed
+          
+          # Initialize a variable to keep track of the cumulative width of plates placed horizontally.
+          last_plate_width = 0  # Unused variable, not renamed
+          
+          # Define a starting distance value (set to 1) which is later used in calculating the insertion point.
+          dist = 1  # Unused variable, not renamed
+          
+          # Create an empty array to hold positions of labels for each plate.
+          label_positions = []  # Changed 'label_locs' to 'label_positions'
+          
+          # Create a new group within the current entities; this group will contain all plate copies.
+          @plate_group = @entities.add_group
+          
+          # The following line (commented out) would set the group's name to 'Plates' if enabled.
+          # @plate_group.instance.name = 'Plates'  # Commented out, not renamed
+          
+          # Remove any nil entries from the sorted_plates array (in case any were introduced during sorting).
+          sorted_plates.compact!
+          
+          # Start a new operation in the model with the name "spread a plate". This is used for undo/redo management.
+          @model.start_operation("spread a plate", true)
+          
+          # Iterate over each plate in the sorted list of plates.
+          sorted_plates.each do |plate|
+            # Calculate the diagonal length of the plate's bounding box. This value is used to determine placement.
+            diagonal_length = plate.bounds.diagonal  # Changed 'diag_length' to 'diagonal_length'
+            
+            # Define the insertion point for this plate copy. The x-coordinate is 'dist', the y-coordinate
+            # is set to the negative of the diagonal length (to offset the plate vertically), and the z-coordinate is 0.
+            insertion_point = [dist, -diagonal_length, 0]  # Changed 'insertion_pt' to 'insertion_point'
+            
+            # Create an instance (copy) of the current plate and add it to the plate group at the specified insertion point.
+            plate_copy = @plate_group.entities.add_instance plate, insertion_point  # Changed 'pl_cpy' to 'plate_copy'
+            
+            # Add the newly created plate copy to the array of plate copies for later reference.
+            plate_copies.push plate_copy
+            
+            # Set the material of the plate copy to be the same as the material of the first instance of the original plate.
+            plate_copy.material = plate.instances.first.material
+            
+            # The following section compares the plate copy with pre-scraped plate definitions to ensure proper scaling.
+            # Retrieve the definition (i.e. component definition) of the plate copy.
+            copy_definition = plate_copy.definition  # Changed 'copy_def' to 'copy_definition'
+            
+            # From a list of named plate definitions, select those that match the copy's definition.
+            property_definition = @named_plate_definitions.select { |pd| pd if pd == copy_definition }
+            
+            # Extract the x-scale factor from the transformation of the first instance of the matched property definition.
+            x_scale = property_definition[0].instances.first.transformation.xscale  # Changed 'x' to 'x_scale'
+            
+            # Extract the y-scale factor from the transformation.
+            y_scale = property_definition[0].instances.first.transformation.yscale  # Changed 'y' to 'y_scale'
+            
+            # Extract the z-scale factor from the transformation.
+            z_scale = property_definition[0].instances.first.transformation.zscale  # Changed 'z' to 'z_scale'
+            
+            # Create a scaling transformation using the extracted x, y, and z scale factors.
+            transformation = Geom::Transformation.scaling(x_scale, y_scale, z_scale)  # Changed 'trans' to 'transformation'
+            
+            # Apply the scaling transformation to the plate copy in place.
+            plate_copy_transformed = plate_copy.transform! transformation  # Changed 'pl_cpy_trans' to 'plate_copy_transformed'
+            
+            # Calculate the number of instances for the current plate definition (subtracting one to exclude the original).
+            plate_count = (plate_copy.definition.count_instances - 1)  # Changed 'plate_count' to 'plate_count'
+            
+            # Create a temporary group for further processing such as exploding the plate and verifying its thickness.
+            temp_group = @entities.add_group()
+            
+            # Within the temporary group, add an instance of the original plate at the origin (ORIGIN constant assumed defined).
+            temp_plate = temp_group.entities.add_instance plate, ORIGIN  # Changed 'temp_plate' to 'temp_plate'
+            
+            # Set the material of the temporary group to match that of the original plate for visual consistency.
+            temp_group.material = plate.instances[0].material
+            
+            # Apply the scaling transformation to the temporary plate to standardize its dimensions.
+            temp_plate.transform! transformation
+            
+            # Make the temporary plate unique by breaking its link with the original component definition.
+            temp_plate.make_unique
+            
+            # Explode the temporary plate into its individual entities; this may help in further processing,
+            # especially if special handling for column plates is required.
+            temp_plate.explode # May need to do special exploding for column plates
+            
+            # Convert the temporary group (now containing the exploded plate) into a component,
+            # which will be used to verify the plate's thickness.
+            temp_component = temp_group.to_component
+            
+            # Retrieve the verified thickness of the plate by calling a helper method on the temporary component.
+            verified_thickness = get_plate_thickness_verified(temp_component)
+            
+            # Store the verified thickness as a floating-point number in the plate copy's attribute dictionary.
+            plate_copy.definition.attribute_dictionary(PLATE_DICTIONARY)[TH_LABEL] = verified_thickness.to_f
+            
+            # Also store the verified thickness as a rational number (converted to a string) in the attribute dictionary.
+            plate_copy.definition.attribute_dictionary(PLATE_DICTIONARY)[M_LABEL] = verified_thickness.to_r.to_s
+            
+            # Set the quantity attribute in the plate copy's definition to the calculated plate_count.
+            plate_copy.definition.attribute_dictionary(PLATE_DICTIONARY)[Q_LABEL] = plate_count
+            
+            # Rename the plate copy to include the plate count, using a prefix "x" for easier identification.
+            plate_copy.name = "x" + plate_count.to_s  # Changed 'name' to more readable format
+            
+            # Explode the plate copy's entities to standardize its structure for the labeling process.
+            explode_to_plate_standards(plate_copy.definition.entities)
+            
+            # Determine the largest face of the plate copy, which will be used to establish its orientation.
+            if face = get_largest_face(plate_copy)
+              # If a largest face is found, extract its normal vector to understand the plate's orientation.
+              plate_normal = face.normal  # Changed 'pl_norm' to 'plate_normal'
+            else
+              # If no valid face is found, print a message to the console for debugging purposes.
+              p 'found nil'
+              # Skip processing this plate and move to the next one in the iteration.
+              next
             end
-            if pl_norm.parallel? Y_AXIS
-              rotation2 = pl_norm.angle_between Z_AXIS
-              pl_cpy.transform! (Geom::Transformation.rotation insertion_pt, [1,0,0], rotation2)
+            
+            # Begin the rotation process to orient the plate based on its normal vector.
+            # Check if the plate's normal is not parallel to the Z-axis (vertical); if it is not, further adjustments are required.
+            if not plate_normal.parallel? Z_AXIS
+              # If the plate normal is parallel to the X-axis, perform a set of rotations relative to Y and Z axes.
+              if plate_normal.parallel? X_AXIS
+                # Calculate the angle between the plate normal and the Y-axis for the first rotation.
+                rotation_1 = plate_normal.angle_between Y_AXIS  # Changed 'rotation1' to 'rotation_1'
+                # Calculate the angle between the plate normal and the Z-axis for the second rotation.
+                rotation_2 = plate_normal.angle_between Z_AXIS  # Changed 'rotation2' to 'rotation_2'
+                # Rotate the plate copy about the Z-axis at the insertion point using the first calculated rotation angle.
+                plate_copy.transform! (Geom::Transformation.rotation insertion_point, [0, 0, 1], rotation_1)
+                # Rotate the plate copy about the X-axis at the insertion point using the second calculated rotation angle.
+                plate_copy.transform! (Geom::Transformation.rotation insertion_point, [1, 0, 0], rotation_2)
+              end
+              # If the plate normal is parallel to the Y-axis, perform an alternative rotation.
+              if plate_normal.parallel? Y_AXIS
+                # Calculate the angle between the plate normal and the Z-axis.
+                rotation_2 = plate_normal.angle_between Z_AXIS  # Changed 'rotation2' to 'rotation_2'
+                # Rotate the plate copy about the X-axis at the insertion point using the calculated angle.
+                plate_copy.transform! (Geom::Transformation.rotation insertion_point, [1, 0, 0], rotation_2)
+              end
             end
+            
+            # Apply an additional rotation of 180 degrees about the Z-axis at the insertion point.
+            # This may be used to invert or further adjust the plate's orientation.
+            plate_copy.transform! Geom::Transformation.rotation(insertion_point, [0, 0, 1], 180.degrees)
+            
+            # Check if the plate's bounding box width is greater than its height to decide if further rotation is needed.
+            # This aligns the plate's longer edge with the Y-axis.
+            if plate_copy.bounds.width > plate_copy.bounds.height
+              # Rotate the plate copy 270 degrees about the Z-axis at the insertion point to align its long edge with the Y-axis.
+              plate_copy.transform! Geom::Transformation.rotation(insertion_point, [0, 0, 1], 270.degrees)
+            end
+            
+            # Retrieve the current bounding box of the plate copy.
+            plate_bounds = plate_copy.bounds
+            
+            # Get the minimum (corner) point of the plate copy's bounding box.
+            plate_corner = plate_bounds.min  # Changed 'pl_corner' to 'plate_corner'
+            
+            # Calculate a position vector by subtracting the bounding box's corner from the plate's origin.
+            # This vector is used to align the internal entities with the new origin.
+            position_vector = plate_copy.transformation.origin - plate_corner  # Changed 'pos_vec' to 'position_vector'
+            
+            # Create a translation transformation based on the calculated position vector.
+            position_entities = Geom::Transformation.translation(position_vector)  # Changed 'pos_entities' to 'position_entities'
+            
+            # Apply the translation to all entities within the plate copy's definition, shifting them appropriately.
+            plate_copy.definition.entities.transform_entities position_entities, plate_copy
+            
+            # Retrieve the updated bounding box of the transformed plate copy.
+            plate_bounds = plate_copy.bounds
+            
+            # Extract the width of the plate from its bounding box.
+            width = plate_bounds.width  # Changed 'w' to 'width'
+            
+            # Extract the height of the plate from its bounding box.
+            height = plate_bounds.height  # Changed 'h' to 'height'
+            
+            # Extract the depth of the plate from its bounding box.
+            depth = plate_bounds.depth  # Changed 'd' to 'depth'
+            
+            # Retrieve the maximum (opposite corner) point of the plate copy's bounding box.
+            plate_max = plate_bounds.max  # Changed 'plc' to 'plate_max'
+            
+            # Adjust the plate's position if it has positive Z coordinates, which might indicate it is elevated above the base.
+            if plate_max[2] > 0
+              # Create a vector that represents the displacement needed in the Z-direction.
+              vector = Geom::Vector3d.new(0, 0, (plate_max[2] * 1))  # Changed 'vec' to 'vector'
+              # Apply a translation transformation in the opposite direction (using the reversed vector) to lower the plate.
+              plate_copy.transform! (Geom::Transformation.translation(vector.reverse))
+            end
+            
+            # Adjust the plate's position if its maximum X-coordinate is negative, ensuring it is properly positioned.
+            if plate_max[0] < 0
+              # Create a vector based on the negative X-coordinate.
+              vector = Geom::Vector3d.new((plate_max[0] * 1), 0, 0)  # Changed 'vec' to 'vector'
+              # Apply a translation transformation using the reversed vector to correct the X-position.
+              plate_copy.transform! (Geom::Transformation.translation(vector.reverse))
+            end
+            
+            # Translate the plate copy horizontally based on the cumulative width of the previously placed plates.
+            plate_copy.transform! (Geom::Transformation.translation([last_plate_width, 0, 0]))
+            
+            # *** New code to ensure alignment using the top-left most corner of the bounding box ***
+            # Compute the top-left most corner in the XY plane. Here, 'left' is defined as the minimum X value and
+            # 'top' is the maximum Y value of the bounding box.
+            top_left = Geom::Point3d.new(plate_bounds.min.x, plate_bounds.max.y, plate_bounds.min.z)
+            # Compute a translation that moves the top_left's y-coordinate to 0.
+            y_translation = Geom::Transformation.translation([0, -top_left.y, 0])
+            plate_copy.transform! y_translation
+            
+            # Output the current location (origin) of the plate copy after all transformations,
+            # which aids in debugging and verifying placement.
+            p "Plate #{plate_copy.name} location: #{plate_copy.transformation.origin}"
+            
+            # Label the plate by creating a text or marker label associated with the plate copy.
+            # The helper function label_plate handles the creation and association of the label.
+            plate_label = label_plate(plate_copy, @plate_group)  # Changed 'pl_label' to 'plate_label'
+            
+            # Assign the created label to a specific layer designated for labels.
+            set_layer(plate_label, LABELS_LAYER)
+            
+            # Save the label's position (specifically the second corner of its bounding box) into the plate copy's attribute dictionary.
+            plate_copy.definition.attribute_dictionary(PLATE_DICTIONARY)[INFO_LABEL_POSITION] = plate_label.bounds.corner(1)
+            
+            # Add the center of the plate copy's bounding box to the label_positions array for potential future use.
+            label_positions.push plate_copy.bounds.center  # Changed 'label_locs' to 'label_positions'
+            
+            # Determine the "pull out" distance based on the height of the plate's bounding box.
+            # This value might be used for spacing or further layout adjustments.
+            pull_out_distance = plate_copy.bounds.height  # Changed 'pull_out_dist' to 'pull_out_distance'
+            
+            # Update the cumulative horizontal offset (last_plate_width) by adding the current plate's width and an extra 3-unit spacing.
+            last_plate_width += (width + 3)
+            
+            # Remove the temporary component created for thickness verification to clean up temporary entities.
+            temp_component.erase!
           end
-
-          pl_cpy.transform! Geom::Transformation.rotation(insertion_pt, [0,0,1], 180.degrees)
-
-          ##align long edge with Y_AXIS
-          if pl_cpy.bounds.width > pl_cpy.bounds.height
-            pl_cpy.transform! Geom::Transformation.rotation(insertion_pt, [0,0,1], 270.degrees)
-          end
-
-          pl_orig = pl_cpy.transformation.origin
-          pl_corner = pl_cpy.bounds.min
-          pos_vec = pl_orig - pl_corner
-          pos_entities = Geom::Transformation.translation(pos_vec)
-
-          pl_cpy.definition.entities.transform_entities pos_entities, pl_cpy
-
-          pb = pl_cpy.bounds
-          w = pb.width
-          h = pb.height
-          d = pb.depth
-          plc = pb.max
-
-          if plc[2] > 0
-            vec = Geom::Vector3d.new(0,0,(plc[2]*1))
-            pl_cpy.transform! (Geom::Transformation.translation(vec.reverse))
-          end
-
-          if plc[0] < 0
-            vec = Geom::Vector3d.new((plc[0]*1),0,0)
-            pl_cpy.transform! (Geom::Transformation.translation(vec.reverse))
-          end
-
-          pl_cpy.transform! (Geom::Transformation.translation([last_plate_width,0,0]))
-          pl_label = label_plate(pl_cpy, @plate_group)
-          set_layer(pl_label, LABELS_LAYER)
-          pl_cpy.definition.attribute_dictionary(PLATE_DICTIONARY)[INFO_LABEL_POSITION] = pl_label.bounds.corner(1)
-
-          label_locs.push pl_cpy.bounds.center
-          pull_out_dist = pl_cpy.bounds.height
-
-
-          last_plate_width += (w + 3)
-          temp_component.erase!
-        end
-        return copies
+          # After processing all plates, return the array containing all the plate copies.
+          return plate_copies  # Changed 'copies' to 'plate_copies'
+          
+        # Rescue any exceptions that occur during the process to prevent the operation from crashing.
         rescue Exception => e
+          # Output the exception message to the console for debugging.
           puts e.message
+          # Output the backtrace of the exception, which shows the call stack at the time of the error.
           puts e.backtrace.inspect
+          # Display a user-friendly message box informing the user that there was a problem during the process.
           UI.messagebox("There was a problem gathering and spreading the plates")
         end
       end
+
+
+      
+      
 
       def deactivate(view)
         # restore_material(@plates) if @state != 0
