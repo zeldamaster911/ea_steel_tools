@@ -115,7 +115,7 @@ module EA_Extensions623
         else
           @baseselect = SKUI::Listbox.new(BASETYPES)
         end
-        @baseselect.position(110,30)
+        @baseselect.position(113,30)
         @baseselect.width = 75
         @baseselect.visible = @@hss_type == 'Column'
         @@basetype.empty? ? @@basetype = (@baseselect.value = BASETYPES.first) : @baseselect.value = @@basetype
@@ -124,17 +124,17 @@ module EA_Extensions623
         }
         @group2.add_control(@baseselect)
         base_s_label = SKUI::Label.new('Base Plate', @baseselect)
-        base_s_label.position(5, 33)
+        base_s_label.position(3, 33)
         base_s_label.visible = (@@hss_type == 'Column')
         @group2.add_control(base_s_label)
 
         hss_beam_cap_label = SKUI::Label.new("Cap Thickness")
-        hss_beam_cap_label.position(5,43)
+        hss_beam_cap_label.position(3,43)
         hss_beam_cap_label.visible = (@@hss_type == 'Beam')
         @group2.add_control(hss_beam_cap_label)
 
         cap_select = SKUI::Textbox.new(@@cap_thickness)
-        cap_select.position(110,40)
+        cap_select.position(113,40)
         cap_select.width = 75
         cap_select.visible = @@hss_type == 'Beam'
         cap_select.on( :textchange ) {|control|
@@ -155,7 +155,7 @@ module EA_Extensions623
 
         start_tol = SKUI::Textbox.new (@@start_tolerance.to_f)
         start_tol.name = :start_tolerance
-        start_tol.position(110,100)
+        start_tol.position(113,100)
         start_tol.width = 75
         start_tol.on( :textchange ) { |control|
           @@start_tolerance = control.value.to_s.to_r.to_f
@@ -164,7 +164,7 @@ module EA_Extensions623
 
         end_tol = SKUI::Textbox.new (@@end_tolerance.to_f)
         end_tol.name = :start_tolerance
-        end_tol.position(110,75)
+        end_tol.position(113,75)
         end_tol.width = 75
         end_tol.on( :textchange ) { |control|
           @@end_tolerance = control.value.to_s.to_r.to_f
@@ -172,11 +172,11 @@ module EA_Extensions623
         @group2.add_control end_tol
 
         st_tol_label = SKUI::Label.new('T - Tolerance', start_tol)
-        st_tol_label.position(5, 75)
+        st_tol_label.position(3, 75)
         @group2.add_control(st_tol_label)
 
         end_tol_label = SKUI::Label.new('B - Tolerance', end_tol)
-        end_tol_label.position(5, 103)
+        end_tol_label.position(3, 103)
         @group2.add_control(end_tol_label)
 
         stud_toggle = SKUI::Checkbox.new("\r\n Toggle Studs")
@@ -324,7 +324,7 @@ module EA_Extensions623
         }
 
         stud_spacing_control = SKUI::Textbox.new(@@studspacing.to_s.to_r.to_f)
-        stud_spacing_control.position(110,140)
+        stud_spacing_control.position(113,140)
         stud_spacing_control.width = 75
         stud_spacing_control.on(:textchange) {|control|
           @@studspacing = control.value.to_s.to_r.to_f
@@ -344,8 +344,8 @@ module EA_Extensions623
         top_key_for_dropdown  = PlateThicknesses.find { |k, v| v[:t] == @@top_plate_thickness }[0]
         base_plate_dropdown.value = base_key_for_dropdown
         top_plate_dropdown.value = top_key_for_dropdown
-        base_plate_dropdown.position(110,170)
-        top_plate_dropdown.position(110,200)
+        base_plate_dropdown.position(113,170)
+        top_plate_dropdown.position(113,200)
         base_plate_dropdown.width = 75
         top_plate_dropdown.width = 75
 
@@ -357,9 +357,9 @@ module EA_Extensions623
         }
 
         base_plate_label = SKUI::Label.new('Base Plate Thickness', base_plate_dropdown)
-        base_plate_label.position(5,170)
+        base_plate_label.position(3,170)
         top_plate_label = SKUI::Label.new('Top Plate Thickness', top_plate_dropdown)
-        top_plate_label.position(5,200)
+        top_plate_label.position(3,200)
 
         @group2.add_control(base_plate_dropdown)
         @group2.add_control(top_plate_dropdown)
