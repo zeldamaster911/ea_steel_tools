@@ -806,6 +806,8 @@ module EA_Extensions623
       
           temp_group_copy = temp_etch_group.copy
           rot = Geom::Transformation.rotation([@w / 2, @h / 2, 0], Z_AXIS, 180.degrees)
+          # if base plate, change rotation
+
           ege.transform_entities(rot, temp_group_copy)
       
           temp_etch_group.explode
